@@ -41,7 +41,6 @@ async function cargarModalHTML() {
             }
         });
 
-        console.log('Modal cargado correctamente');
         return true;
     } catch (error) {
         console.error('Error al cargar el modal:', error);

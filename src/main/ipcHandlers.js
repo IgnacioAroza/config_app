@@ -170,6 +170,20 @@ ipcMain.handle('get-listaprecios', async (event, dataFolder) => {
 });
 
 // EMPRESAS
+// Función para analizar la cadena de empresas del XML
+function parseEmpresasFromXml(empresasString) {
+  if (!empresasString) return [];
+
+  return empresasString.split(';').map(empresaStr => {
+    const [codigo, ubicacion, procesaStr] = empresaStr.split(',');
+    return {
+      codigo,
+      ubicacion,
+      procesa: procesaStr && procesaStr.toLowerCase() === 'true'
+    };
+  });
+}
+
 ipcMain.handle('get-empresas', async (event, dataFolder) => {
   if (!dataFolder) {
     console.error('[get-empresas] No data folder provided');
@@ -224,28 +238,30 @@ ipcMain.handle('check-folder-permissions', async (event, folderPath) => {
   }
 });
 
-// Configuración de empresas: persistencia en JSON simple en la carpeta de usuario
-const empresasConfigPath = path.join(process.env.APPDATA || process.env.HOME || __dirname, 'empresas-config.json');
-
+// Modificar los manejadores de IPC
 ipcMain.handle('get-empresas-config', async () => {
-  try {
-    if (fs.existsSync(empresasConfigPath)) {
-      const data = fs.readFileSync(empresasConfigPath, 'utf8');
-      return JSON.parse(data);
-    }
-    return [];
-  } catch (error) {
-    console.error('[get-empresas-config] Error:', error);
-    return [];
-  }
+  // Leer la configuración del XML principal
+  const configPath = getConfigPath();
+  const configData = readConfig(configPath);
+
+  // Parsear la cadena de empresas
+  const empresasString = configData.empresas || '';
+  return parseEmpresasFromXml(empresasString);
 });
 
-ipcMain.handle('save-empresas-config', async (event, empresasConfig) => {
+ipcMain.handle('save-empresas-config', async (event, empresasString) => {
   try {
-    fs.writeFileSync(empresasConfigPath, JSON.stringify(empresasConfig, null, 2), 'utf8');
-    return true;
+    // Leer la configuración actual
+    const configPath = getConfigPath();
+    const configData = readConfig(configPath);
+
+    // Agregar o actualizar la sección de empresas
+    configData.empresas = empresasString;
+
+    // Guardar toda la configuración
+    return saveConfig(configPath, configData);
   } catch (error) {
-    console.error('[save-empresas-config] Error:', error);
+    console.error('Error al guardar empresas en configuración:', error);
     return false;
   }
 });
@@ -275,10 +291,16 @@ ipcMain.handle('load-config', async () => {
 ipcMain.handle('save-config', async (event, config) => {
   try {
     const configPath = getConfigPath();
-    const success = saveConfig(configPath, config);
-    return { success, path: configPath };
+    const result = saveConfig(configPath, config);
+    return {
+      success: result,
+      path: configPath
+    };
   } catch (error) {
-    console.error('[save-config] Error:', error);
-    return { success: false, error: error.message };
+    console.error('Error al guardar configuración:', error);
+    return {
+      success: false,
+      error: error.message
+    };
   }
 });

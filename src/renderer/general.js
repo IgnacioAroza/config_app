@@ -339,9 +339,20 @@ function asociarValidacionGeneral() {
       guardarBtn.addEventListener('click', async (e) => {
         e.preventDefault();
 
-        // Asegurar que los campos de correo estén habilitados antes de validar
-        habilitarCamposCorreo();        // Validar la pestaña general
+        // Asegurar que los campos de correo estén habilitados antes de validar        habilitarCamposCorreo();
+
+        // Validar la pestaña general
         if (await validarGeneral()) {
+          // Antes de continuar, intentar guardar las empresas explícitamente
+          // Esta llamada asegura que window.empresasConfigString se actualice
+          try {
+            if (typeof window.guardarEmpresasConfig === 'function') {
+              await window.guardarEmpresasConfig();
+            }
+          } catch (error) {
+            // Manejo silencioso del error
+          }
+
           // Validar empresas si están cargadas
           let empresasValidas = true;
           let errorEmpresasMsg = '';
@@ -357,14 +368,40 @@ function asociarValidacionGeneral() {
             empresasValidas = false;
             errorEmpresasMsg = `Error al validar empresas: ${error.message}`;
             window.modalUtils.mostrarModalError([errorEmpresasMsg]);
-          }          // Solo continuar si ambas validaciones son correctas
+          }
+
+          // Solo continuar si ambas validaciones son correctas
           if (empresasValidas) {
             // Guardar en memoria primero
             guardarGeneralEnMemoria();
 
             // Preparar el objeto de configuración
-            const config = prepararConfiguracionCompleta();            // Guardar en XML
-            const result = await window.electron.saveConfig(config);
+            const config = await prepararConfiguracionCompleta();
+
+            // IMPORTANTE: Asegurar que config solo contiene datos serializables
+            const configSimple = {};
+            Object.keys(config).forEach(key => {
+              const value = config[key];
+              // Convertir a tipos simples
+              if (typeof value === 'boolean' ||
+                typeof value === 'number' ||
+                typeof value === 'string' ||
+                value === null) {
+                configSimple[key] = value;
+              } else if (Array.isArray(value)) {
+                configSimple[key] = value.join(','); // Convertir arrays a strings
+              } else if (typeof value === 'object' && value !== null) {
+                try {
+                  configSimple[key] = JSON.stringify(value); // Intentar serializar objetos
+                } catch (e) {
+                  console.warn(`No se pudo serializar la propiedad ${key}:`, e);
+                  configSimple[key] = ''; // Valor por defecto
+                }
+              } else {
+                configSimple[key] = ''; // Cualquier otro tipo se convierte a string vacío
+              }
+            });            // Ahora envía configSimple en lugar de config
+            const result = await window.electron.saveConfig(configSimple);
 
             if (result.success) {
               window.modalUtils.mostrarModalExito([
@@ -576,11 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
  * Prepara el objeto de configuración completo para guardarlo
  * @returns {Object} - Objeto con toda la configuración del programa
  */
-function prepararConfiguracionCompleta() {
-  // Guardar primero en memoria para tener todos los valores actualizados
-  guardarGeneralEnMemoria();
-
-  // Convertir la configuración general para el formato XML
+async function prepararConfiguracionCompleta() {
   const config = {
     // Rutas
     erpfolder: window.generalConfig.erpFolder || '',
@@ -605,12 +638,85 @@ function prepararConfiguracionCompleta() {
     test: window.generalConfig.test === 'true',
   };
 
+  // AÑADIR EMPRESAS - PUNTO CRÍTICO - Versión mejorada
+  let empresasConfigEncontradas = false;
+  // Intentar llamar a guardarEmpresasConfig antes (si no se ha llamado ya)
+  if (typeof window.guardarEmpresasConfig === 'function') {
+    try {
+      await window.guardarEmpresasConfig();
+      // Debería actualizar window.empresasConfigString
+    } catch (error) {
+      // Manejo silencioso del error
+    }
+  }
+  // Intentar obtener la configuración de empresas desde diferentes fuentes
+  if (window.empresasConfigString) {
+    // Si la cadena formateada está disponible en la ventana global
+    config.empresas = window.empresasConfigString;
+    empresasConfigEncontradas = true;
+  } else if (localStorage.getItem('empresasConfigString')) {
+    // Si está en localStorage
+    config.empresas = localStorage.getItem('empresasConfigString');
+    empresasConfigEncontradas = true;
+  } else if (window.empresasModel && window.empresasModel.length > 0) {
+    // Si tenemos el modelo de empresas en la ventana global
+    config.empresas = window.empresasModel
+      .map(e => `${e.codigo},${e.ubicacion},${e.procesa ? 'True' : 'False'}`)
+      .join(';');
+    empresasConfigEncontradas = true;
+  } else {
+    try {
+      // Intentar recuperar modelo de empresas de localStorage
+      const empresasModelString = localStorage.getItem('empresasModel');
+      if (empresasModelString) {
+        const empresasModel = JSON.parse(empresasModelString);
+        if (empresasModel && empresasModel.length > 0) {
+          config.empresas = empresasModel
+            .map(e => `${e.codigo},${e.ubicacion},${e.procesa ? 'True' : 'False'}`)
+            .join(';');
+          empresasConfigEncontradas = true;
+        }
+      }
+    } catch (error) {
+      // Manejo silencioso del error
+    }
+  }
+
+  // Si aún no tenemos empresas, crear una configuración por defecto
+  if (!empresasConfigEncontradas) {
+
+
+    // Intentar obtener las empresas del backend directamente
+    try {
+      if (window.generalConfig.dataFolder) {
+        const empresas = await window.electron.getEmpresas(window.generalConfig.dataFolder);
+        if (empresas && empresas.length > 0) {
+          // Crear una configuración básica: todas las empresas con la primera activada
+          config.empresas = empresas
+            .map((e, index) => {
+              const ubicacion = `${window.generalConfig.dataFolder}\\${e.codigo}`;
+              return `${e.codigo},${ubicacion},${index === 0 ? 'True' : 'False'}`;
+            })
+            .join(';');
+          empresasConfigEncontradas = true;
+        }
+      }
+    } catch (error) {
+      console.error('Error al intentar crear configuración de empresas por defecto:', error);
+    }
+  }
+
+  // Si todavía no tenemos empresas, usar un valor vacío para evitar errores
+  if (!empresasConfigEncontradas) {
+
+    config.empresas = '';
+  }
+
   // Obtener estados de checkboxes para artículos
   if (typeof window.getArticulosCheckboxState === 'function') {
     const articulosState = window.getArticulosCheckboxState();
 
     // Procesar cada grupo de checkboxes para obtener los códigos seleccionados
-    // Para cada lista de checkboxes, extraer los códigos de los elementos marcados
     if (articulosState) {
       // Extraer valores de los checkboxes
       config.depositostock = extraerCodigosSeleccionados(articulosState['depositos-list']);
@@ -636,9 +742,6 @@ function prepararConfiguracionCompleta() {
       config.clasecliente = extraerCodigosSeleccionados(clientesState['claseclient-list']);
       config.listaprecioscliente = extraerCodigosSeleccionados(clientesState['listaprecios-list']);
     }
-  }  // Obtener configuración de empresas
-  if (window.empresasConfig && Array.isArray(window.empresasConfig)) {
-    config.empresas = window.empresasConfig;
   }
 
   return config;
@@ -662,4 +765,35 @@ function extraerCodigosSeleccionados(checksState) {
     .filter(codigo => codigo !== null);
 
   return codigosSeleccionados.join(',');
+}
+
+// Función de guardado principal
+async function guardarConfiguracion() {
+  try {
+    // Si estamos en la pestaña de empresas, guardar primero las empresas
+    const tabEmpresasActive = document.querySelector('.tab-content[data-tab="Empresas"]').classList.contains('active');
+
+    if (tabEmpresasActive && typeof window.guardarEmpresasConfig === 'function') {
+      await window.guardarEmpresasConfig();
+    }
+
+    // Ahora preparar y guardar la configuración completa
+    const config = await prepararConfiguracionCompleta();
+
+
+    // Guardar la configuración
+    const resultado = await window.electron.saveConfig(config);
+
+    if (!resultado.success) {
+      throw new Error(resultado.error || 'Error al guardar la configuración');
+    }
+
+
+    // Mostrar mensaje de éxito
+    return true;
+  } catch (error) {
+    console.error('Error al guardar la configuración:', error);
+    // Mostrar mensaje de error
+    return false;
+  }
 }

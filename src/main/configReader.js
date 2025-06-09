@@ -47,7 +47,7 @@ function readConfig(filePath = getConfigPath()) {
     try {
         // Si el archivo no existe, crear uno con valores por defecto
         if (!existsSync(filePath)) {
-            console.log(`El archivo de configuración no existe. Creando uno por defecto en: ${filePath}`);
+            
             createDefaultConfigFile(filePath);
         }
 

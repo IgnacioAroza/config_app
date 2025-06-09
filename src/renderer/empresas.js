@@ -249,25 +249,46 @@ function validarEmpresasAntesDeGuardar() {
 // Guarda la configuración de empresas
 async function guardarEmpresasConfig() {
     try {
-        // Preparar el modelo para guardar
-        const empresasConfig = empresasModel.map(e => ({
-            codigo: e.codigo,
-            ubicacion: e.ubicacion,
-            procesa: e.procesa
-        }));
+        // Verificar que tenemos empresas para guardar
+        if (!empresasModel || empresasModel.length === 0) {
+            console.warn('No hay empresas para guardar');
+            return true; // No es un error, simplemente no hay empresas
+        }
 
-        // Guardar en la variable global para que el guardado general también pueda usarla
-        window.empresasConfig = empresasConfig;
+        // Formatear empresas como cadena
+        const empresasString = empresasModel
+            .map(e => `${e.codigo},${e.ubicacion},${e.procesa ? 'True' : 'False'}`)
+            .join(';');
+
+        // Guardar en la ventana para acceso global
+        window.empresasConfigString = empresasString;
+
+        // IMPORTANTE: Guardar también en localStorage para persistencia entre pestañas
+        try {
+            localStorage.setItem('empresasConfigString', empresasString);
+
+            // También guarda una versión simplificada del modelo
+            const modelSimplificado = empresasModel.map(e => ({
+                codigo: e.codigo,
+                nombre: e.nombre || '',
+                ubicacion: e.ubicacion,
+                procesa: e.procesa
+            }));
+            localStorage.setItem('empresasModel', JSON.stringify(modelSimplificado));
+        } catch (storageError) {
+            console.warn('No se pudo guardar en localStorage:', storageError);
+        }
+
+        // También exponer el modelo completo
+        window.empresasModel = empresasModel;
 
         // Enviar modelo al backend para guardar
-        const resultado = await window.electron.invoke('save-empresas-config', empresasConfig);
+        const resultado = await window.electron.invoke('save-empresas-config', empresasString);
 
         if (!resultado) {
             throw new Error('Error al guardar la configuración de empresas');
         }
 
-        // Indicar éxito
-        console.log('Configuración de empresas guardada correctamente');
         return true;
     } catch (error) {
         console.error('Error al guardar empresas:', error);
@@ -300,6 +321,21 @@ window.revalidarEmpresas = async function () {
     renderEmpresasTable();
     return true;
 };
+
+function updateEmpresasProcesa(index, procesa) {
+    empresasModel[index].procesa = procesa;
+
+    // Actualizar la cadena formateada y guardarla globalmente
+    const empresasString = empresasModel
+        .map(e => `${e.codigo},${e.ubicacion},${e.procesa ? 'True' : 'False'}`)
+        .join(';');
+
+    window.empresasConfigString = empresasString;
+    localStorage.setItem('empresasConfigString', empresasString);
+
+    // Actualizar la UI
+    renderEmpresasTable();
+}
 
 // Inicializar la carga de empresas cuando se carga el documento
 window.onload = async function () {

@@ -24,5 +24,7 @@ contextBridge.exposeInMainWorld('electron', {
   getEmpresas: (dataFolder) => ipcRenderer.invoke('get-empresas', dataFolder),
   // Configuración XML
   loadConfig: () => ipcRenderer.invoke('load-config'),
-  saveConfig: (config) => ipcRenderer.invoke('save-config', config),
+  saveConfig: (config) => {
+    return ipcRenderer.invoke('save-config', config);
+  },
 });
