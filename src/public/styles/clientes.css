@@ -1,0 +1,76 @@
+#clientes-tab {
+  max-width: 98vw;
+  margin: 0 auto;
+}
+
+.clientes-columns {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.clientes-col {
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  padding: 8px 6px 8px 8px;
+  min-width: 150px;
+  max-width: 180px;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.clientes-title {
+  font-weight: bold;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.clientes-list {
+  margin-top: 2px;
+  width: 100%;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+  box-sizing: border-box;
+}
+
+.clientes-list label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.clientes-scroll {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.button-center {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.clientes-col.clientes-error {
+  background: #ff2222 !important;
+  border-color: #b30000 !important;
+  box-shadow: 0 0 0 2px #ffaaaa;
+}
+
+@media (max-width: 900px) {
+  .clientes-columns {
+    flex-wrap: wrap;
+  }
+  .clientes-col {
+    min-width: 120px;
+    max-width: 100%;
+  }
+}

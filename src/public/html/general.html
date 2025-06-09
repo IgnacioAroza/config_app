@@ -1,0 +1,84 @@
+<div id="general-tab">
+  <div class="form-row">
+    <label for="erp-folder">ERP Folder:</label>
+    <input
+      type="text"
+      id="erp-folder"
+      name="erp-folder"
+      placeholder="Seleccionar carpeta ERP"
+    />
+    <button type="button" id="select-erp-folder">...</button>
+  </div>
+  <div class="form-row">
+    <label for="data-folder">Data Folder:</label>
+    <input type="text" id="data-folder" name="data-folder" readonly />
+  </div>
+  <div class="form-row">
+    <label for="export-folder">Export Folder:</label>
+    <input
+      type="text"
+      id="export-folder"
+      name="export-folder"
+      placeholder="Seleccionar carpeta de exportación"
+    />
+    <button type="button" id="select-export-folder">...</button>
+  </div>
+  <div class="form-row">
+    <label for="temp-folder">Temp Folder:</label>
+    <input type="text" id="temp-folder" name="temp-folder" readonly />
+  </div>
+  <div class="form-row">
+    <label for="id-suscriptor">ID Suscriptor:</label>
+    <input type="text" id="id-suscriptor" name="id-suscriptor" />
+  </div>
+  <div class="form-row">
+    <label for="nombre-empresa">Nombre Empresa:</label>
+    <input type="text" id="nombre-empresa" name="nombre-empresa" />
+  </div>
+  <div class="form-row">
+    <label for="alicuota">Alícuota por Defecto:</label>
+    <select id="alicuota" name="alicuota"></select>
+  </div>
+  <hr />
+  <div>
+  </div>
+    <div class="mail-section">
+    <strong>Datos para envío de correos: (varios destinatarios: separarlos por coma)</strong>
+    <div class="form-row">
+      <label for="remitente-correo">Remitente Correo:</label>
+      <input type="email" id="remitente-correo" name="remitente-correo">
+    </div>
+    <div class="form-row">
+      <label for="destinatario-correo">Destinatario Correo:</label>
+      <input type="email" id="destinatario-correo" name="destinatario-correo">
+    </div>
+    <div class="form-row">
+      <label for="destinatario-cc">Destinatario CC:</label>
+      <input type="email" id="destinatario-cc" name="destinatario-cc">
+    </div>
+    <div class="form-row">
+      <label for="destinatario-cco">Destinatario CCO:</label>
+        <input type="email" id="destinatario-cco" name="destinatario-cco">
+    </div>
+  </div>
+  <div class="radio-group-row">
+    <div class="radio-group">
+      <label>Export File:</label>
+      <label><input type="radio" name="export-file" value="true" /> True</label>
+      <label><input type="radio" name="export-file" value="false" /> False</label>
+    </div>
+    <div class="radio-group">
+      <label>Export API:</label>
+      <label><input type="radio" name="export-api" value="true" /> True</label>
+      <label><input type="radio" name="export-api" value="false" /> False</label>
+    </div>
+    <div class="radio-group">
+      <label>Test:</label>
+      <label><input type="radio" name="test" value="true" /> True</label>
+      <label><input type="radio" name="test" value="false" /> False</label>
+    </div>
+  </div>
+  <div class="button-center">
+    <button id="guardar-btn" type="submit">Guardar</button>
+  </div>
+</div>

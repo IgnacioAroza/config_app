@@ -1,0 +1,113 @@
+<!-- Modal para mostrar mensajes de error -->
+<div id="error-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="close-modal">&times;</span>
+      <h3>Por favor, corrija los siguientes errores:</h3>
+    </div>
+    <div class="modal-body">
+      <ul id="error-list">
+        <!-- Aquí se insertarán los mensajes de error -->
+      </ul>
+    </div>
+    <div class="modal-footer">
+      <button id="cerrar-modal-btn" class="btn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+  }
+
+  .modal-content {
+    position: relative;
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 0;
+    border: 1px solid #888;
+    border-radius: 5px;
+    width: 80%;
+    max-width: 600px;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+    animation-name: modalopen;
+    animation-duration: 0.4s;
+  }
+
+  .modal-header {
+    padding: 10px 16px;
+    background-color: #ffebee;
+    color: #d32f2f;
+    border-radius: 5px 5px 0 0;
+  }
+
+  .modal-header h3 {
+    margin: 0;
+  }
+
+  .modal-body {
+    padding: 16px;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+
+  .modal-footer {
+    padding: 10px 16px;
+    background-color: #f1f1f1;
+    border-radius: 0 0 5px 5px;
+    text-align: right;
+  }
+
+  .close-modal {
+    color: #d32f2f;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .close-modal:hover,
+  .close-modal:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  #error-list {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  #error-list li {
+    margin: 8px 0;
+    color: #d32f2f;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    background-color: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .btn:hover {
+    background-color: #b71c1c;
+  }
+
+  @keyframes modalopen {
+    from {opacity: 0; transform: translateY(-20px);}
+    to {opacity: 1; transform: translateY(0);}
+  }
+</style>

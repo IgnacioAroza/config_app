@@ -1,0 +1,178 @@
+/* Contenedor de la tabla */
+.empresas-container {
+  background: #b3b3b3;
+  padding: 15px 5px 15px 5px;
+  border-radius: 4px;
+  min-height: 350px;
+  margin-bottom: 20px;
+}
+
+/* Tabla */
+.empresas-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 15px;
+}
+.empresas-table th, .empresas-table td {
+  border: 1px solid #ccc;
+  padding: 7px 10px;
+  text-align: left;
+  vertical-align: middle;
+}
+.empresas-table th {
+  background: #f0f0f0;
+  font-weight: bold;
+}
+.empresas-table tbody tr:nth-child(even) {
+  background: #f9f9f9;
+}
+.empresas-table tbody tr:nth-child(odd) {
+  background: #fff;
+}
+
+/* Botón de ubicación */
+.btn-ubicacion {
+  width: 32px;
+  height: 28px;
+  font-size: 18px;
+  background: #e0e0e0;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+.btn-ubicacion:hover {
+  background: #d0d0d0;
+}
+
+/* Checkbox */
+.empresas-table input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #0078d7;
+  cursor: pointer;
+}
+
+/* Botón Guardar */
+.guardar-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+#btn-guardar {
+  padding: 10px 35px;
+  font-size: 16px;
+  background: #0078d7;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  transition: background 0.2s;
+}
+#btn-guardar:hover {
+  background: #005fa3;
+}
+
+.td-ubicacion.error {
+  background: #ffd6d6 !important;
+  color: #b30000 !important;
+  border-color: #b30000 !important;
+  position: relative;
+  cursor: help;
+}
+
+/* Estilo para filas con errores */
+.empresa-error {
+  background-color: #ffebee !important;
+}
+
+.empresa-error:hover {
+  background-color: #ffcdd2 !important;
+}
+
+/* Estilo para checkbox deshabilitado */
+.chk-procesa:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Mostrar un conteo de empresas procesadas */
+.empresas-stats {
+  margin-top: 15px;
+  font-size: 14px;
+  color: #616161;
+  text-align: right;
+  padding: 5px 10px;
+}
+
+.empresas-stats span {
+  padding: 5px 10px;
+  border-radius: 3px;
+  background-color: #f5f5f5;
+}
+
+.empresas-stats span.error {
+  color: white;
+  background-color: #f44336;
+  font-weight: bold;
+}
+
+/* Info container modificado */
+.info-container {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-text {
+  margin: 0;
+  color: #0d47a1;
+  font-size: 14px;
+  flex: 1;
+}
+
+.guardar-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+#btn-guardar {
+  padding: 10px 35px;
+  font-size: 16px;
+  background: #0078d7;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  transition: background 0.2s;
+}
+
+#btn-guardar:hover {
+  background: #005fa3;
+}
+
+.btn-verificar {
+  padding: 8px 16px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.btn-verificar:hover {
+  background-color: #1976d2;
+}
