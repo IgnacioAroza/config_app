@@ -38,9 +38,22 @@ function initGeneralTabEvents() {
       const folderPath = await window.electron.invoke('select-export-folder');
       if (folderPath) {
         document.getElementById('export-folder').value = folderPath;
-        // Selecciona automáticamente la carpeta Temp dentro de la exportación
-        const tempFolderPath = window.electron.joinPath(folderPath, 'Temp');
-        document.getElementById('temp-folder').value = tempFolderPath;
+        
+        // Extraer la carpeta Fuerzadeventa
+        const parts = folderPath.split('\\');
+        const fuerzaDeventaIndex = parts.findIndex(part => 
+          part.toLowerCase() === 'fuerzadeventa');
+        
+        if (fuerzaDeventaIndex >= 0) {
+          // Reconstruir la ruta hasta Fuerzadeventa y añadir Temp
+          const basePath = parts.slice(0, fuerzaDeventaIndex + 1).join('\\');
+          const tempFolderPath = `${basePath}\\Temp`;
+          document.getElementById('temp-folder').value = tempFolderPath;
+        } else {
+          // Si no encontramos Fuerzadeventa, usar el comportamiento actual
+          const tempFolderPath = window.electron.joinPath(folderPath, 'Temp');
+          document.getElementById('temp-folder').value = tempFolderPath;
+        }
       } else {
         console.error('No se seleccionó ninguna carpeta');
       }
