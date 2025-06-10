@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function cargarConfiguracionInicial() {
         try {
             const config = await window.electron.loadConfig();
-            console.log('Configuración cargada:', config);
 
             // Guardar las rutas principales
             if (config.erpfolder) {
@@ -98,17 +97,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn('Debes seleccionar primero la carpeta ERP para cargar los datos de clientes.');
             }
         } else if (tabName === 'empresas') {
-            if (window.currentDataFolder) {
-                if (typeof cargarEmpresas === 'function') {
-                    cargarEmpresas(window.currentDataFolder);
-                } else if (typeof window.revalidarEmpresas === 'function') {
-                    // Si la función de cargar empresas no está disponible pero sí la de revalidar
-                    // puede ser porque estamos volviendo a la pestaña ya cargada
-                    window.revalidarEmpresas();
-                }
+            // Usar la función initEmpresasTab que ya tiene la lógica de verificación
+            if (typeof window.initEmpresasTab === 'function') {
+                await window.initEmpresasTab();
+            } else if (typeof window.revalidarEmpresas === 'function') {
+                // Si la función de inicializar no está disponible pero sí la de revalidar
+                window.revalidarEmpresas();
             } else {
-                // No mostrar error en consola al iniciar, solo no cargar nada
-                // content.innerHTML ya tiene el HTML base de la pestaña
+                // Si ninguna función está disponible, intentar cargar empresas directamente
+                if (window.currentDataFolder && typeof cargarEmpresas === 'function') {
+                    cargarEmpresas(window.currentDataFolder);
+                } else {
+                    console.warn('No se pudo inicializar la pestaña de empresas: funciones no disponibles');
+                }
             }
         } else if (tabName === 'general') {
             // Restaurar configuración general si existe

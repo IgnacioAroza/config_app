@@ -74,9 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
           if (folderPath) {
             document.getElementById('erp-folder').value = folderPath;
             // Aquí puedes agregar lógica adicional, como actualizar el campo Data Folder, etc.
-            // console.log('Carpeta seleccionada:', folderPath);
           } else {
-            console.log('No se seleccionó ninguna carpeta');
+            console.warn('No se seleccionó ninguna carpeta');
           }
         });
         erpFolderButton._listenerAdded = true; // Evita agregar el listener más de una vez
@@ -647,6 +646,7 @@ async function prepararConfiguracionCompleta() {
       // Debería actualizar window.empresasConfigString
     } catch (error) {
       // Manejo silencioso del error
+      console.error('Error al guardar configuración de empresas:', error);
     }
   }
   // Intentar obtener la configuración de empresas desde diferentes fuentes
@@ -679,13 +679,12 @@ async function prepararConfiguracionCompleta() {
       }
     } catch (error) {
       // Manejo silencioso del error
+      console.error('Error al recuperar empresas del localStorage:', error);
     }
   }
 
   // Si aún no tenemos empresas, crear una configuración por defecto
   if (!empresasConfigEncontradas) {
-
-
     // Intentar obtener las empresas del backend directamente
     try {
       if (window.generalConfig.dataFolder) {
@@ -713,20 +712,19 @@ async function prepararConfiguracionCompleta() {
   }
 
   // Obtener estados de checkboxes para artículos
-  if (typeof window.getArticulosCheckboxState === 'function') {
-    const articulosState = window.getArticulosCheckboxState();
+  if (typeof window.getArticulosSeleccionados === 'function') {
+    const articulosSeleccionados = window.getArticulosSeleccionados();
 
-    // Procesar cada grupo de checkboxes para obtener los códigos seleccionados
-    if (articulosState) {
-      // Extraer valores de los checkboxes
-      config.depositostock = extraerCodigosSeleccionados(articulosState['depositos-list']);
-      config.grupoartic = extraerCodigosSeleccionados(articulosState['grupoartic-list']);
-      config.claseartic = extraerCodigosSeleccionados(articulosState['claseartic-list']);
-      config.linea = extraerCodigosSeleccionados(articulosState['lineas-list']);
-      config.marca = extraerCodigosSeleccionados(articulosState['marcas-list']);
-      config.tipoartic = extraerCodigosSeleccionados(articulosState['tipoartic-list']);
-      config.categoria = extraerCodigosSeleccionados(articulosState['categoria-list']);
-    }
+    // Agregar directamente los valores seleccionados
+    config.depositostock = articulosSeleccionados.depositos || '';
+    config.categoria = articulosSeleccionados.categoria || '';
+    config.grupoartic = articulosSeleccionados.grupoartic || '';
+    config.claseartic = articulosSeleccionados.claseartic || '';
+    config.linea = articulosSeleccionados.lineas || '';
+    config.marca = articulosSeleccionados.marcas || '';
+    config.tipoartic = articulosSeleccionados.tipoartic || '';
+  } else {
+    console.warn('Función getArticulosSeleccionados no disponible');
   }
 
   // Obtener estados de checkboxes para clientes
@@ -775,6 +773,12 @@ async function guardarConfiguracion() {
 
     if (tabEmpresasActive && typeof window.guardarEmpresasConfig === 'function') {
       await window.guardarEmpresasConfig();
+    }
+
+    // Primero, guardar el estado de los checkboxes si estamos en la pestaña de artículos
+    const articulosTabActive = document.querySelector('.tab-content[data-tab="Articulos"]').classList.contains('active');
+    if (articulosTabActive && typeof window.getArticulosCheckboxState === 'function') {
+      window.getArticulosCheckboxState();
     }
 
     // Ahora preparar y guardar la configuración completa

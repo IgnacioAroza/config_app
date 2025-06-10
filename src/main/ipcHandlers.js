@@ -172,16 +172,32 @@ ipcMain.handle('get-listaprecios', async (event, dataFolder) => {
 // EMPRESAS
 // Función para analizar la cadena de empresas del XML
 function parseEmpresasFromXml(empresasString) {
-  if (!empresasString) return [];
+  // Verificar que empresasString sea una cadena
+  if (typeof empresasString !== 'string' || !empresasString.trim()) {
+    return [];
+  }
 
-  return empresasString.split(';').map(empresaStr => {
-    const [codigo, ubicacion, procesaStr] = empresaStr.split(',');
-    return {
-      codigo,
-      ubicacion,
-      procesa: procesaStr && procesaStr.toLowerCase() === 'true'
-    };
-  });
+  try {
+    return empresasString.split(';')
+      .filter(item => item.trim()) // Eliminar elementos vacíos
+      .map(empresaStr => {
+        const parts = empresaStr.split(',');
+        if (parts.length < 3) {
+          console.warn(`Formato incorrecto para empresa: "${empresaStr}"`);
+          return null; // Será filtrado abajo
+        }
+
+        return {
+          codigo: parts[0],
+          ubicacion: parts[1],
+          procesa: parts[2] && parts[2].toLowerCase() === 'true'
+        };
+      })
+      .filter(item => item !== null); // Eliminar elementos inválidos
+  } catch (error) {
+    console.error('Error al parsear cadena de empresas:', error);
+    return [];
+  }
 }
 
 ipcMain.handle('get-empresas', async (event, dataFolder) => {
@@ -196,6 +212,51 @@ ipcMain.handle('get-empresas', async (event, dataFolder) => {
   } catch (error) {
     console.error('[get-empresas] Error:', error);
     return [];
+  }
+});
+
+// Modificar los manejadores de IPC
+ipcMain.handle('get-empresas-config', async () => {
+  try {
+    // Leer la configuración actual
+    const configPath = getConfigPath();
+    const configData = readConfig(configPath);
+
+    // Obtener el valor de empresas del XML
+    // Error aquí: xmlContent no existe, debes usar configData
+    let empresasString = configData?.empresas;
+
+    // IMPORTANTE: Verificar que es una cadena antes de procesarla
+    if (typeof empresasString !== 'string') {
+      console.warn('El valor de empresas no es una cadena:', empresasString);
+      // Devolver array vacío si no hay empresas configuradas
+      return [];
+    }
+
+    // Aquí el error también: estás devolviendo configData.empresas después de verificar
+    // que empresasString (que ES configData.empresas) es una cadena
+    return empresasString;
+  } catch (error) {
+    console.error('Error al obtener configuracion de empresas:', error);
+    // Devolver array vacío para no romper el flujo
+    return [];
+  }
+});
+
+ipcMain.handle('save-empresas-config', async (event, empresasString) => {
+  try {
+    // Leer la configuración actual
+    const configPath = getConfigPath();
+    const configData = readConfig(configPath);
+
+    // Agregar o actualizar la sección de empresas
+    configData.empresas = empresasString;
+
+    // Guardar toda la configuración
+    return saveConfig(configPath, configData);
+  } catch (error) {
+    console.error('Error al guardar empresas en configuración:', error);
+    return false;
   }
 });
 
@@ -238,33 +299,6 @@ ipcMain.handle('check-folder-permissions', async (event, folderPath) => {
   }
 });
 
-// Modificar los manejadores de IPC
-ipcMain.handle('get-empresas-config', async () => {
-  // Leer la configuración del XML principal
-  const configPath = getConfigPath();
-  const configData = readConfig(configPath);
-
-  // Parsear la cadena de empresas
-  const empresasString = configData.empresas || '';
-  return parseEmpresasFromXml(empresasString);
-});
-
-ipcMain.handle('save-empresas-config', async (event, empresasString) => {
-  try {
-    // Leer la configuración actual
-    const configPath = getConfigPath();
-    const configData = readConfig(configPath);
-
-    // Agregar o actualizar la sección de empresas
-    configData.empresas = empresasString;
-
-    // Guardar toda la configuración
-    return saveConfig(configPath, configData);
-  } catch (error) {
-    console.error('Error al guardar empresas en configuración:', error);
-    return false;
-  }
-});
 
 ipcMain.handle('select-folder', async () => {
   const result = await dialog.showOpenDialog({ properties: ['openDirectory'] });

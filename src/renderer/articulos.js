@@ -143,7 +143,6 @@ async function cargarTipoArticulos(dataFolder) {
 }
 
 function validarChecksArticulos() {
-    const allLists = Array.from(document.querySelectorAll('.articulos-list')).map(el => el.id);
     // IDs de las columnas a validar en artículos
     const columnas = [
         'categoria-list',
@@ -222,6 +221,17 @@ function agregarListenerSubmitArticulos() {
     }
 }
 
+function inicializarEstadoArticulos() {
+    try {
+        const savedState = localStorage.getItem('articulosCheckboxState');
+        if (savedState) {
+            window.setArticulosCheckboxState(JSON.parse(savedState));
+        }
+    } catch (e) {
+        console.warn('Error al restaurar estado de artículos:', e);
+    }
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     agregarListenerSubmitArticulos();
     agregarListenerChangeArticulos();
@@ -230,12 +240,20 @@ window.addEventListener('DOMContentLoaded', () => {
 window.initArticulosTabEvents = function () {
     agregarListenerChangeArticulos();
     agregarListenerSubmitArticulos();
+    inicializarEstadoArticulos();
 }
 
 
 // --- Persistencia de estado de checkboxes para tabs.js ---
 // Devuelve un objeto con el estado de todos los checkboxes de cada columna
-window.getArticulosCheckboxState = function () {
+window.getArticulosCheckboxState = function (useCache = false) {
+    // Si useCache es true y ya tenemos el estado guardado, devolverlo directamente
+    if (useCache && window.articulosCheckboxState && window.articulosCodigosMap) {
+        return {
+            state: window.articulosCheckboxState,
+            codigosMap: window.articulosCodigosMap
+        };
+    }
     const columnas = [
         'categoria-list',
         'depositos-list',
@@ -246,13 +264,41 @@ window.getArticulosCheckboxState = function () {
         'tipoartic-list',
     ];
     const state = {};
+    const codigosMap = {};
+
     columnas.forEach(id => {
         const cont = document.getElementById(id);
-        if (!cont) return;
+        if (!cont) {
+            console.warn(`Contenedor #${id} no encontrado`);
+            return; // Continuar con la siguiente iteración
+        }
         const checks = cont.querySelectorAll('input[type="checkbox"]');
+
         state[id] = Array.from(checks).map(chk => chk.checked);
+
+        // Extraer códigos de las etiquetas
+        codigosMap[id] = Array.from(checks).map(chk => {
+            const labelText = chk.parentElement.textContent.trim();
+            // Extraer código de textos como "1.Nombre" -> "1"
+            const match = labelText.match(/^(\d+)\./);
+            return match ? match[1] : null;
+        });
     });
-    return state;
+
+    // Guardar también en window para acceso global
+    window.articulosCheckboxState = state;
+    window.articulosCodigosMap = codigosMap;
+
+    // Persistir en localStorage
+    try {
+        localStorage.setItem('articulosCheckboxState', JSON.stringify(state));
+        localStorage.setItem('articulosCodigosMap', JSON.stringify(codigosMap));
+    } catch (e) {
+        console.warn('Error al guardar estado de artículos en localStorage:', e);
+    }
+
+    // IMPORTANTE: Return FUERA del forEach
+    return { state, codigosMap };
 };
 
 // Restaura el estado de los checkboxes a partir de un objeto de estado
@@ -281,4 +327,29 @@ window.setArticulosCheckboxState = function (state) {
     if (typeof validarChecksArticulos === 'function') {
         validarChecksArticulos();
     }
+};
+
+window.getArticulosSeleccionados = function () {
+    const result = window.getArticulosCheckboxState(true);
+
+    // Validar que result tenga la estructura esperada
+    if (!result || !result.state || !result.codigosMap) {
+        console.error('Error: getArticulosCheckboxState devolvió un valor incorrecto', result);
+        return {}; // Devolver objeto vacío para evitar errores
+    }
+
+    const { state, codigosMap } = result;
+    const seleccionados = {};
+
+    Object.keys(state).forEach(id => {
+        const listName = id.replace('-list', ''); // Convertir 'depositos-list' a 'depositos'
+        const seleccion = state[id]
+            .map((checked, index) => checked ? codigosMap[id][index] : null)
+            .filter(codigo => codigo !== null)
+            .join(',');
+
+        seleccionados[listName] = seleccion;
+    });
+
+    return seleccionados;
 };

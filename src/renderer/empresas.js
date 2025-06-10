@@ -113,9 +113,27 @@ function renderEmpresasTable() {
 async function cargarEmpresas() {
     try {
         // 1. Obtener empresas base
-        const empresas = await window.electron.invoke('get-empresas', window.currentDataFolder);
+        const empresas = await window.electron.invoke('get-empresas', window.currentDataFolder || '');
+
         // 2. Obtener configuración guardada (ubicación y procesa)
-        const configEmpresas = await window.electron.invoke('get-empresas-config'); // Debe devolver un array [{codigo, ubicacion, procesa}]
+        let configEmpresas = [];
+        try {
+            const empresasConfig = await window.electron.invoke('get-empresas-config');
+
+            // Verificar el tipo de datos recibidos
+            if (Array.isArray(empresasConfig)) {
+                // Si ya es un array, usarlo directamente
+                configEmpresas = empresasConfig;
+            } else if (typeof empresasConfig === 'string') {
+                // Si es una cadena, parsearla
+                configEmpresas = parseEmpresasString(empresasConfig);
+            } else {
+                console.warn('Formato de empresasConfig no reconocido:', empresasConfig);
+            }
+        } catch (configError) {
+            console.warn('Error al cargar configuración de empresas, usando valores por defecto:', configError);
+            // Continuar con un array vacío
+        }
 
         // Verificar duplicados en códigos de empresa
         const codigosUnicos = new Set();
@@ -155,7 +173,7 @@ async function cargarEmpresas() {
         // Detectar códigos que ya no existen
         const codigosEliminados = [...codigosAnteriores].filter(c => !codigosNuevos.has(c));
         if (codigosEliminados.length > 0 && empresasModel.length > 0) {
-            mostrarErrorModal([`Atención: Se han eliminado las siguientes empresas: ${codigosEliminados.join(', ')}`]);
+            mostrarErrorModal([`Atencion: Se han eliminado las siguientes empresas: ${codigosEliminados.join(', ')}`]);
         }
 
         // Detectar códigos nuevos
@@ -182,6 +200,25 @@ async function cargarEmpresas() {
         console.error('Error al cargar empresas:', error);
         mostrarErrorModal([`Error al cargar empresas: ${error.message}`]);
     }
+}
+
+// Función auxiliar para parsear la cadena de empresas
+function parseEmpresasString(empresasString) {
+    if (!empresasString) return [];
+
+    return empresasString.split(';')
+        .filter(emp => emp.trim())
+        .map(emp => {
+            const parts = emp.split(',');
+            if (parts.length < 3) return null;
+
+            return {
+                codigo: parts[0].trim(),
+                ubicacion: parts[1].trim(),
+                procesa: parts[2].toLowerCase() === 'true'
+            };
+        })
+        .filter(emp => emp !== null);
 }
 
 // Valida todas las empresas antes de guardar
@@ -338,58 +375,45 @@ function updateEmpresasProcesa(index, procesa) {
 }
 
 // Inicializar la carga de empresas cuando se carga el documento
-window.onload = async function () {
-    await cargarEmpresas();
-
-    // Agregar el listener para el botón de verificación
-    const verificarBtn = document.getElementById('verificar-empresas-btn');
-    if (verificarBtn) {
-        verificarBtn.addEventListener('click', async () => {
-            verificarBtn.disabled = true;
-            verificarBtn.textContent = 'Verificando...';
-
-            try {
-                // Revalidar todas las empresas
-                await window.revalidarEmpresas();
-                // Ejecutar validación completa para mostrar cualquier error
-                const esValido = validarEmpresasAntesDeGuardar();
-
-                if (esValido) {
-                    window.modalUtils.mostrarModalExito(['Todas las empresas han sido verificadas correctamente.']);
-                }
-            } catch (error) {
-                console.error('Error al verificar empresas:', error);
-                mostrarErrorModal([`Error al verificar empresas: ${error.message}`]);
-            } finally {
-                verificarBtn.disabled = false;
-                verificarBtn.textContent = 'Verificar todas las empresas';
-            }
-        });
-    }
-
-    // Agregar el listener para el botón de guardar
-    const guardarBtn = document.getElementById('btn-guardar');
-    if (guardarBtn) {
-        guardarBtn.addEventListener('click', async () => {
-            // Validar antes de guardar
-            if (validarEmpresasAntesDeGuardar()) {
-                try {
-                    guardarBtn.disabled = true;
-                    guardarBtn.textContent = 'Guardando...';
-
-                    // Guardar configuración
-                    await guardarEmpresasConfig();
-
-                    // Mostrar mensaje de éxito
-                    window.modalUtils.mostrarModalExito(['Configuración de empresas guardada correctamente.']);
-                } catch (error) {
-                    console.error('Error al guardar:', error);
-                    mostrarErrorModal([`Error al guardar: ${error.message}`]);
-                } finally {
-                    guardarBtn.disabled = false;
-                    guardarBtn.textContent = 'Guardar';
-                }
-            }
-        });
-    }
+// window.onload = async function () {
+//     await initEmpresas();
+// };
+window.initEmpresasTab = async function () {
+    await initEmpresas();
 };
+// En empresas.js, al inicio de la carga:
+async function initEmpresas() {
+    try {
+        // 1. Intentar obtener la carpeta Data desde diferentes fuentes
+        let dataFolder = null;
+
+        // Opción 1: Desde window.generalConfig (si ya está cargado)
+        if (window.generalConfig && window.generalConfig.dataFolder) {
+            dataFolder = window.generalConfig.dataFolder;
+        }
+        // Opción 2: Desde localStorage (persistencia entre recargas)
+        else if (localStorage.getItem('dataFolder')) {
+            dataFolder = localStorage.getItem('dataFolder');
+        }
+        // Opción 3: Desde configActual (si se cargó al iniciar la app)
+        else if (window.configActual && window.configActual.datafolder) {
+            dataFolder = window.configActual.datafolder;
+        }
+
+        // Si no hay carpeta Data configurada, mostrar mensaje y salir
+        if (!dataFolder) {
+            console.warn('Carpeta Data no configurada');
+            mostrarWarningModal(['Para ver las empresas primero debes configurar la carpeta de datos (Data) en la pestaña General']);
+            return;
+        }
+
+        // Establecer la carpeta actual para uso en cargarEmpresas
+        window.currentDataFolder = dataFolder;
+
+        // Ahora cargar las empresas
+        await cargarEmpresas();
+    } catch (error) {
+        console.error('Error al inicializar empresas:', error);
+        mostrarErrorModal([`Error al inicializar empresas: ${error.message}`]);
+    }
+}

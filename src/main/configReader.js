@@ -47,7 +47,6 @@ function readConfig(filePath = getConfigPath()) {
     try {
         // Si el archivo no existe, crear uno con valores por defecto
         if (!existsSync(filePath)) {
-            
             createDefaultConfigFile(filePath);
         }
 
