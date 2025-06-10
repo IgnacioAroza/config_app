@@ -71,21 +71,21 @@ function renderEmpresasTable() {
         tbody.appendChild(tr);
     });
 
-    // Actualizar contador de empresas a procesar
-    const empresasProcesadas = empresasModel.filter(e => e.procesa).length;
-    const totalEmpresas = empresasModel.length;
+    // // Actualizar contador de empresas a procesar
+    // const empresasProcesadas = empresasModel.filter(e => e.procesa).length;
+    // const totalEmpresas = empresasModel.length;
 
-    // Actualizar el contador en la sección de estadísticas
-    const contadorElement = document.getElementById('empresas-contador');
-    if (contadorElement) {
-        contadorElement.textContent = `${empresasProcesadas} de ${totalEmpresas} empresas serán procesadas`;
-        // Destacar visualmente si no hay ninguna empresa seleccionada
-        if (empresasProcesadas === 0 && totalEmpresas > 0) {
-            contadorElement.classList.add('error');
-        } else {
-            contadorElement.classList.remove('error');
-        }
-    }
+    // // Actualizar el contador en la sección de estadísticas
+    // const contadorElement = document.getElementById('empresas-contador');
+    // if (contadorElement) {
+    //     contadorElement.textContent = `${empresasProcesadas} de ${totalEmpresas} empresas serán procesadas`;
+    //     // Destacar visualmente si no hay ninguna empresa seleccionada
+    //     if (empresasProcesadas === 0 && totalEmpresas > 0) {
+    //         contadorElement.classList.add('error');
+    //     } else {
+    //         contadorElement.classList.remove('error');
+    //     }
+    // }
 
     // Listeners para botones de ubicación
     tbody.querySelectorAll('.btn-ubicacion').forEach((btn, idx) => {
@@ -122,7 +122,7 @@ async function cargarEmpresas() {
 
             // Verificar el tipo de datos recibidos
             if (Array.isArray(empresasConfig)) {
-                // Si ya es un array, usarlo directamente
+                // Si ya es un array de objetos, usarlo directamente
                 configEmpresas = empresasConfig;
             } else if (typeof empresasConfig === 'string') {
                 // Si es una cadena, parsearla
@@ -131,8 +131,7 @@ async function cargarEmpresas() {
                 console.warn('Formato de empresasConfig no reconocido:', empresasConfig);
             }
         } catch (configError) {
-            console.warn('Error al cargar configuración de empresas, usando valores por defecto:', configError);
-            // Continuar con un array vacío
+            console.warn('Error al cargar configuración de empresas:', configError);
         }
 
         // Verificar duplicados en códigos de empresa

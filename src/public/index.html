@@ -9,7 +9,9 @@
     <meta
       http-equiv="X-Content-Security-Policy"
       content="default-src 'self'; script-src 'self'"
-    /> -->    <title>Configurador Fuerza de Venta</title>
+    /> -->    
+    <title>Configurador Fuerza de Venta</title>
+    <link rel="stylesheet" href="./styles/styles.css" />
     <link rel="stylesheet" href="./styles/general.css" />
   </head>
   <body>
@@ -19,7 +21,6 @@
       <button class="tab-button" data-tab="clientes">Clientes</button>
       <button class="tab-button" data-tab="empresas">Empresas</button>
     </div>
-    <div id="content"></div>
     <div id="content"></div>
     <!-- Contenedor para cargar las pestañas -->
     <script>
@@ -31,6 +32,9 @@
       // Cargar la pestaña general al inicio
       loadTab("general");
     </script>
+    <div id="guardar-container" class="guardar-container">
+      <button id="guardar-global" class="btn-guardar">Guardar</button>
+    </div>
     <script src="../renderer/modal.js"></script>
     <script src="../renderer/tabs.js"></script>
     <script src="../renderer/general.js"></script>

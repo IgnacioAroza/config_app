@@ -337,9 +337,6 @@ function asociarValidacionGeneral() {
     if (guardarBtn && !guardarBtn._listenerAdded) {
       guardarBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-
-        // Asegurar que los campos de correo estén habilitados antes de validar        habilitarCamposCorreo();
-
         // Validar la pestaña general
         if (await validarGeneral()) {
           // Antes de continuar, intentar guardar las empresas explícitamente
@@ -411,8 +408,6 @@ function asociarValidacionGeneral() {
               window.modalUtils.mostrarModalError(['Error al guardar la configuración. Por favor, intente nuevamente.']);
             }
           }
-          // Si empresas no son válidas, la función validarEmpresasAntesDeGuardar ya muestra los errores
-
           // Asegurar nuevamente que los campos queden habilitados después de todo el proceso
           setTimeout(() => habilitarCamposCorreo(), 100);
         }
@@ -637,7 +632,6 @@ async function prepararConfiguracionCompleta() {
     test: window.generalConfig.test === 'true',
   };
 
-  // AÑADIR EMPRESAS - PUNTO CRÍTICO - Versión mejorada
   let empresasConfigEncontradas = false;
   // Intentar llamar a guardarEmpresasConfig antes (si no se ha llamado ya)
   if (typeof window.guardarEmpresasConfig === 'function') {
@@ -707,7 +701,6 @@ async function prepararConfiguracionCompleta() {
 
   // Si todavía no tenemos empresas, usar un valor vacío para evitar errores
   if (!empresasConfigEncontradas) {
-
     config.empresas = '';
   }
 
@@ -728,18 +721,18 @@ async function prepararConfiguracionCompleta() {
   }
 
   // Obtener estados de checkboxes para clientes
-  if (typeof window.getClientesCheckboxState === 'function') {
-    const clientesState = window.getClientesCheckboxState();
+  if (typeof window.getClientesSeleccionados === 'function') {
+    const clientesSeleccionados = window.getClientesSeleccionados();
 
-    if (clientesState) {
-      // Extraer valores de los checkboxes
-      config.grupocliente = extraerCodigosSeleccionados(clientesState['grupclient-list']);
-      config.tipoingbrutos = extraerCodigosSeleccionados(clientesState['tipingresos-list']);
-      config.zonaventacliente = extraerCodigosSeleccionados(clientesState['zonas-list']);
-      config.tipocliente = extraerCodigosSeleccionados(clientesState['tipoclient-list']);
-      config.clasecliente = extraerCodigosSeleccionados(clientesState['claseclient-list']);
-      config.listaprecioscliente = extraerCodigosSeleccionados(clientesState['listaprecios-list']);
-    }
+    // Agregar directamente los valores seleccionados
+    config.grupocliente = clientesSeleccionados.grupclient || '';
+    config.tipoingbrutos = clientesSeleccionados.tipingresos || '';
+    config.zonaventacliente = clientesSeleccionados.zonas || '';
+    config.tipocliente = clientesSeleccionados.tipoclient || '';
+    config.clasecliente = clientesSeleccionados.claseclient || '';
+    config.listaprecioscliente = clientesSeleccionados.listaprecios || '';
+  } else {
+    console.warn('Función getClientesSeleccionados no disponible');
   }
 
   return config;
@@ -766,38 +759,112 @@ function extraerCodigosSeleccionados(checksState) {
 }
 
 // Función de guardado principal
-async function guardarConfiguracion() {
+window.guardarConfiguracion = async function () {
   try {
     // Si estamos en la pestaña de empresas, guardar primero las empresas
-    const tabEmpresasActive = document.querySelector('.tab-content[data-tab="Empresas"]').classList.contains('active');
-
+    const tabEmpresasActive = document.querySelector('.tab-content[data-tab="Empresas"]');
     if (tabEmpresasActive && typeof window.guardarEmpresasConfig === 'function') {
       await window.guardarEmpresasConfig();
     }
 
-    // Primero, guardar el estado de los checkboxes si estamos en la pestaña de artículos
-    const articulosTabActive = document.querySelector('.tab-content[data-tab="Articulos"]').classList.contains('active');
+    // Guardar el estado de los checkboxes si estamos en la pestaña de artículos
+    const articulosTabActive = document.querySelector('.tab-content[data-tab="Articulos"]');
     if (articulosTabActive && typeof window.getArticulosCheckboxState === 'function') {
       window.getArticulosCheckboxState();
+    }
+
+    // Guardar el estado de los checkboxes si estamos en la pestaña de clientes
+    const clientesTabActive = document.querySelector('.tab-content[data-tab="Clientes"]');
+    if (clientesTabActive && typeof window.getClientesCheckboxState === 'function') {
+      window.getClientesCheckboxState();
     }
 
     // Ahora preparar y guardar la configuración completa
     const config = await prepararConfiguracionCompleta();
 
+    // IMPORTANTE: Asegurar que config solo contiene datos serializables
+    const configSimple = {};
+    Object.keys(config).forEach(key => {
+      const value = config[key];
+      // Convertir a tipos simples
+      if (typeof value === 'boolean' ||
+        typeof value === 'number' ||
+        typeof value === 'string' ||
+        value === null) {
+        configSimple[key] = value;
+      } else if (Array.isArray(value)) {
+        configSimple[key] = value.join(','); // Convertir arrays a strings
+      } else if (typeof value === 'object' && value !== null) {
+        try {
+          configSimple[key] = JSON.stringify(value); // Intentar serializar objetos
+        } catch (e) {
+          console.warn(`No se pudo serializar la propiedad ${key}:`, e);
+          configSimple[key] = ''; // Valor por defecto
+        }
+      } else {
+        configSimple[key] = ''; // Cualquier otro tipo se convierte a string vacío
+      }
+    });
 
     // Guardar la configuración
-    const resultado = await window.electron.saveConfig(config);
+    const resultado = await window.electron.saveConfig(configSimple);
 
     if (!resultado.success) {
       throw new Error(resultado.error || 'Error al guardar la configuración');
     }
 
-
     // Mostrar mensaje de éxito
+    window.modalUtils.mostrarModalExito([
+      `¡Configuración guardada exitosamente!`,
+      `Archivo guardado en: ${resultado.path}`
+    ]);
     return true;
   } catch (error) {
     console.error('Error al guardar la configuración:', error);
-    // Mostrar mensaje de error
+    window.modalUtils.mostrarModalError([`Error al guardar la configuración: ${error.message}`]);
     return false;
   }
 }
+
+// Script para el botón flotante de guardar
+document.addEventListener('DOMContentLoaded', function () {
+  // Referencia al botón de guardar global
+  const btnGuardarGlobal = document.getElementById('guardar-global');
+
+  if (btnGuardarGlobal) {
+    btnGuardarGlobal.addEventListener('click', async function () {
+      try {
+        // Mostrar indicador de carga
+        btnGuardarGlobal.disabled = true;
+        btnGuardarGlobal.classList.add('guardando');
+        btnGuardarGlobal.innerHTML = '<span class="spinner"></span> Guardando...';
+
+        // Llamar a la función global de guardado
+        if (typeof window.guardarConfiguracion === 'function') {
+          const resultado = await window.guardarConfiguracion();
+          if (!resultado && !window.modalUtils.lastModalWasShown) {
+            // Si no hubo modal de error y el resultado fue false
+            window.modalUtils.mostrarModalError(['No se pudo guardar la configuración']);
+          }
+        } else {
+          console.error('Función guardarConfiguracion no disponible');
+          window.modalUtils.mostrarModalError(['Error: La función de guardado no está disponible']);
+        }
+      } catch (error) {
+        console.error('Error al guardar:', error);
+        window.modalUtils.mostrarModalError([`Error al guardar: ${error.message}`]);
+      } finally {
+        // Restaurar el estado del botón después de un breve delay
+        setTimeout(() => {
+          btnGuardarGlobal.disabled = false;
+          btnGuardarGlobal.classList.remove('guardando');
+          btnGuardarGlobal.textContent = 'Guardar';
+        }, 500);
+      }
+    });
+
+    console.log('Botón de guardar global inicializado');
+  } else {
+    console.warn('Botón de guardar global no encontrado en el DOM');
+  }
+});

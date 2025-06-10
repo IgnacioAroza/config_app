@@ -228,7 +228,7 @@ ipcMain.handle('get-empresas-config', async () => {
 
     // IMPORTANTE: Verificar que es una cadena antes de procesarla
     if (typeof empresasString !== 'string') {
-      console.warn('El valor de empresas no es una cadena:', empresasString);
+      console.log('Nota: Devolviendo empresas como un array de objetos en lugar de como cadena');
       // Devolver array vacío si no hay empresas configuradas
       return [];
     }

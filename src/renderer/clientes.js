@@ -215,6 +215,18 @@ function agregarListenerChangeClientes() {
     }
 }
 
+function inicializarEstadoClientes() {
+    try {
+        const savedState = localStorage.getItem('clientesCheckboxState');
+        if (savedState) {
+            window.setClientesCheckboxState(JSON.parse(savedState));
+        }
+    } catch (e) {
+        console.warn('Error al restaurar estado de clientes:', e);
+    }
+}
+
+
 // Llama a esta función después de renderizar las columnas/artículos
 window.addEventListener('DOMContentLoaded', () => {
     agregarListenersCabeceraChecks();
@@ -225,13 +237,22 @@ window.addEventListener('DOMContentLoaded', () => {
 window.initClientesTabEvents = function () {
     agregarListenersCabeceraChecks();
     agregarListenerChangeClientes();
-    agregarListenerSubmitClientes(); // Si quieres la validación de submit igual que en artículos
+    agregarListenerSubmitClientes();
+    inicializarEstadoClientes();
 }
 
 
 // --- Persistencia de estado de checkboxes para tabs.js ---
 // Devuelve un objeto con el estado de todos los checkboxes de cada columna
-window.getClientesCheckboxState = function () {
+window.getClientesCheckboxState = function (useCache = false) {
+    // Si useCache es true y ya tenemos el estado guardado, devolverlo directamente
+    if (useCache && window.clientesCheckboxState && window.clientesCodigosMap) {
+        return {
+            state: window.clientesCheckboxState,
+            codigosMap: window.clientesCodigosMap
+        };
+    }
+
     const columnas = [
         'tipingresos-list',
         'zonas-list',
@@ -240,28 +261,56 @@ window.getClientesCheckboxState = function () {
         'tipoclient-list',
         'claseclient-list'
     ];
+
     const state = {};
+    const codigosMap = {};
+
     columnas.forEach(id => {
         const cont = document.getElementById(id);
-        if (!cont) return;
+        if (!cont) {
+            console.warn(`Contenedor #${id} no encontrado`);
+            return; // Continuar con la siguiente iteración
+        }
         const checks = cont.querySelectorAll('input[type="checkbox"]');
         state[id] = Array.from(checks).map(chk => chk.checked);
+        // Extraer códigos de las etiquetas
+        codigosMap[id] = Array.from(checks).map(chk => {
+            const labelText = chk.parentElement.textContent.trim();
+            // Extraer código de textos como "1.Nombre" -> "1"
+            const match = labelText.match(/^(\d+)\./);
+            return match ? match[1] : null;
+        });
+
     });
-    return state;
+    // Guardar también en window para acceso global
+    window.clientesCheckboxState = state;
+    window.clientesCodigosMap = codigosMap;
+
+    // Persistir en localStorage
+    try {
+        localStorage.setItem('clientesCheckboxState', JSON.stringify(state));
+        localStorage.setItem('clientesCodigosMap', JSON.stringify(codigosMap));
+    } catch (e) {
+        console.warn('Error al guardar estado de clientes en localStorage:', e);
+    }
+    return { state, codigosMap };
 };
 
 // Restaura el estado de los checkboxes a partir de un objeto de estado
 window.setClientesCheckboxState = function (state) {
     if (!state) return;
+
     Object.keys(state).forEach(id => {
         const cont = document.getElementById(id);
         if (!cont) return;
         const checks = cont.querySelectorAll('input[type="checkbox"]');
         const arr = state[id] || [];
+
         checks.forEach((chk, i) => {
             if (typeof arr[i] === 'boolean') chk.checked = arr[i];
         });
-        // Actualizar cabecera según hijos (igual que en Artículos)
+
+        // Actualizar cabecera según hijos
         const colDiv = cont.closest('.clientes-col');
         if (colDiv) {
             const cabeceraCheck = colDiv.querySelector('.clientes-title input[type="checkbox"]');
@@ -272,8 +321,36 @@ window.setClientesCheckboxState = function (state) {
             }
         }
     });
+
     // Actualiza validación visual
     if (typeof validarChecksClientes === 'function') {
         validarChecksClientes();
     }
+};
+
+// En clientes.js
+window.getClientesSeleccionados = function () {
+    // Usar caché para evitar errores si estamos en otra pestaña
+    const result = window.getClientesCheckboxState(true);
+
+    // Validar que result tenga la estructura esperada
+    if (!result || !result.state || !result.codigosMap) {
+        console.error('Error: getClientesCheckboxState devolvió un valor incorrecto', result);
+        return {}; // Devolver objeto vacío para evitar errores
+    }
+
+    const { state, codigosMap } = result;
+    const seleccionados = {};
+
+    Object.keys(state).forEach(id => {
+        const fieldName = id.replace('-list', ''); // Convertir 'zonas-list' a 'zonas'
+        const seleccion = state[id]
+            .map((checked, index) => checked ? codigosMap[id][index] : null)
+            .filter(codigo => codigo !== null)
+            .join(',');
+
+        seleccionados[fieldName] = seleccion;
+    });
+
+    return seleccionados;
 };
