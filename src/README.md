@@ -1,61 +1,73 @@
-# Coliseo
+# Coliseo - Configurador de Fuerza de Venta
 
-Aplicación de escritorio para la configuración y gestión de parámetros de Fuerza de Venta, desarrollada con Electron.
+Aplicación de escritorio para la configuración y gestión de parámetros de Fuerza de Venta, desarrollada con Electron y JavaScript.
 
-## Estructura del proyecto
+<p align="center">
+  <img src="assets/logo.png" alt="Logo de Coliseo" width="200">
+</p>
 
-```
-public/
-  html/         # Archivos HTML de cada pestaña
-  js/           # Scripts JS generales (por ejemplo, tabs)
-  styles/       # Archivos CSS por pestaña
-src/
-  main/         # Lógica del proceso principal de Electron (backend)
-  renderer/     # Lógica del frontend (JS de cada pestaña, preload)
-package.json    # Configuración y dependencias del proyecto
-```
+## Descripción
+
+Coliseo es una herramienta que permite configurar todos los parámetros necesarios para el sistema Fuerza de Venta, incluyendo:
+
+- Rutas de archivos y carpetas del sistema
+- Configuración de empresas
+- Filtrado y selección de artículos para exportación
+- Filtrado y selección de clientes para exportación
+- Parámetros generales del sistema
+
+## Requisitos previos
+
+- Windows 10 o superior
+- Acceso a las carpetas del sistema ERP
+- Permisos de administrador para instalar la aplicación
 
 ## Instalación
 
-1. Clona el repositorio:
-   ```
-   git clone <url-del-repo>
-   cd Coliseo
-   ```
-2. Instala las dependencias:
-   ```
-   npm install
-   ```
+### Opción 1: Instalador
+
+1. Ejecuta `Coliseo-1.0.0 Setup.exe`
+2. Sigue las instrucciones del instalador
+3. La aplicación se instalará y creará accesos directos
+
+### Opción 2: Versión portable
+
+1. Descomprime el archivo ZIP en la ubicación deseada
+2. Ejecuta `Coliseo.exe` para iniciar la aplicación
+
 
 ## Uso
 
-Para iniciar la aplicación en modo desarrollo:
-```
-npm start
-```
+1. **Pestaña General**: Configura las rutas de las carpetas del sistema
+   - ERP Folder: Carpeta raíz del ERP
+   - Data Folder: Carpeta de datos
+   - Export Folder: Carpeta donde se guardarán los archivos exportados
+   - Temp Folder: Carpeta temporal para procesos intermedios
 
-## Funcionalidades principales
+2. **Pestaña Empresas**: Selecciona las empresas disponibles para exportación
+   - Activar/desactivar empresas
+   - Establecer rutas específicas para cada empresa
 
-- Validación de rutas y archivos requeridos.
-- Carga y edición de datos desde archivos DBF.
-- Configuración de parámetros generales, artículos, clientes y empresas.
-- Guardado seguro de la configuración.
+3. **Pestaña Artículos**: Configura los filtros para la exportación de artículos
+   - Selección por depósito, categoría, línea, etc.
+   - Activar/desactivar exportación para cada artículo
 
-## Scripts útiles
+4. **Pestaña Clientes**: Configura los filtros para la exportación de clientes
+   - Selección por zona, grupo, tipo, etc.
+   - Activar/desactivar exportación para cada cliente
 
-- `npm start` — Inicia la app en modo desarrollo.
-- `npm run build` — (Si tienes empaquetador) Genera la versión de producción.
+5. **Guardar Configuración**: Presiona el botón "Guardar" para almacenar todos los cambios
 
-## Contribución
+## Formato del archivo de configuración
 
-1. Haz un fork del repositorio.
-2. Crea una rama para tu feature o fix.
-3. Haz tus cambios y abre un Pull Request.
+El archivo `settings.config` utiliza formato XML para almacenar la configuración:
 
-## Licencia
-
-[MIT](../LICENSE) (o la que corresponda)
-
----
-
-> Para dudas o sugerencias, contacta a los administradores del proyecto.
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <erpfolder>C:\Coliseo\ERP</erpfolder>
+  <datafolder>C:\Coliseo\ERP\Data</datafolder>
+  <exportfolder>C:\Coliseo\Fuerzadeventa\Exportacion</exportfolder>
+  <tempfolder>C:\Coliseo\Fuerzadeventa\Temp</tempfolder>
+  <!-- Continúa con el resto de configuraciones -->
+</configuration>
