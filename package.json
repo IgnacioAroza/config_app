@@ -1,24 +1,52 @@
 {
   "name": "coliseo",
   "version": "1.0.0",
+  "description": "Aplicación para gestión de configuraciones Coliseo",
   "main": "./src/main/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron .",
-    "dev": "electron .",
-    "package": "electron-builder"
+    "dev": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "name": "Coliseo",
+        "executableName": "Coliseo",
+        "icon": "./assets/icon.ico",
+        "extraResource": [
+          "./settings.config"
+        ]
+      },
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "Coliseo"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "win32"
+          ]
+        }
+      ]
+    }
   },
   "keywords": [],
-  "author": "",
+  "author": "Tu Empresa",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "dbf-reader": "^1.0.3",
-    "electron-builder": "^26.0.12",
+    "electron-squirrel-startup": "^1.0.1",
     "xmldom": "^0.6.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.8.1",
+    "@electron-forge/maker-squirrel": "^7.8.1",
+    "@electron-forge/maker-zip": "^7.8.1",
     "cross-env": "^7.0.3",
     "electron": "^36.2.1"
   }
