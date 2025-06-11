@@ -38,12 +38,12 @@ function initGeneralTabEvents() {
       const folderPath = await window.electron.invoke('select-export-folder');
       if (folderPath) {
         document.getElementById('export-folder').value = folderPath;
-        
+
         // Extraer la carpeta Fuerzadeventa
         const parts = folderPath.split('\\');
-        const fuerzaDeventaIndex = parts.findIndex(part => 
+        const fuerzaDeventaIndex = parts.findIndex(part =>
           part.toLowerCase() === 'fuerzadeventa');
-        
+
         if (fuerzaDeventaIndex >= 0) {
           // Reconstruir la ruta hasta Fuerzadeventa y añadir Temp
           const basePath = parts.slice(0, fuerzaDeventaIndex + 1).join('\\');
@@ -350,80 +350,8 @@ function asociarValidacionGeneral() {
     if (guardarBtn && !guardarBtn._listenerAdded) {
       guardarBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        // Validar la pestaña general
-        if (await validarGeneral()) {
-          // Antes de continuar, intentar guardar las empresas explícitamente
-          // Esta llamada asegura que window.empresasConfigString se actualice
-          try {
-            if (typeof window.guardarEmpresasConfig === 'function') {
-              await window.guardarEmpresasConfig();
-            }
-          } catch (error) {
-            // Manejo silencioso del error
-          }
-
-          // Validar empresas si están cargadas
-          let empresasValidas = true;
-          let errorEmpresasMsg = '';
-
-          try {
-            if (typeof window.validarEmpresasAntesDeGuardar === 'function') {
-              empresasValidas = window.validarEmpresasAntesDeGuardar();
-              if (!empresasValidas) {
-                errorEmpresasMsg = 'La validación de empresas falló. Por favor, corrija los errores antes de continuar.';
-              }
-            }
-          } catch (error) {
-            empresasValidas = false;
-            errorEmpresasMsg = `Error al validar empresas: ${error.message}`;
-            window.modalUtils.mostrarModalError([errorEmpresasMsg]);
-          }
-
-          // Solo continuar si ambas validaciones son correctas
-          if (empresasValidas) {
-            // Guardar en memoria primero
-            guardarGeneralEnMemoria();
-
-            // Preparar el objeto de configuración
-            const config = await prepararConfiguracionCompleta();
-
-            // IMPORTANTE: Asegurar que config solo contiene datos serializables
-            const configSimple = {};
-            Object.keys(config).forEach(key => {
-              const value = config[key];
-              // Convertir a tipos simples
-              if (typeof value === 'boolean' ||
-                typeof value === 'number' ||
-                typeof value === 'string' ||
-                value === null) {
-                configSimple[key] = value;
-              } else if (Array.isArray(value)) {
-                configSimple[key] = value.join(','); // Convertir arrays a strings
-              } else if (typeof value === 'object' && value !== null) {
-                try {
-                  configSimple[key] = JSON.stringify(value); // Intentar serializar objetos
-                } catch (e) {
-                  console.warn(`No se pudo serializar la propiedad ${key}:`, e);
-                  configSimple[key] = ''; // Valor por defecto
-                }
-              } else {
-                configSimple[key] = ''; // Cualquier otro tipo se convierte a string vacío
-              }
-            });            // Ahora envía configSimple en lugar de config
-            const result = await window.electron.saveConfig(configSimple);
-
-            if (result.success) {
-              window.modalUtils.mostrarModalExito([
-                `¡Configuración guardada exitosamente!`,
-                `Archivo guardado en: ${result.path}`
-              ]);
-            } else {
-              window.modalUtils.mostrarModalError(['Error al guardar la configuración. Por favor, intente nuevamente.']);
-            }
-          }
-          // Asegurar nuevamente que los campos queden habilitados después de todo el proceso
-          setTimeout(() => habilitarCamposCorreo(), 100);
-        }
+        // Usar la función compartida
+        await validarYGuardarConfiguracion();
       });
       guardarBtn._listenerAdded = true;
     }
@@ -761,9 +689,6 @@ function extraerCodigosSeleccionados(checksState) {
   if (!checksState || !Array.isArray(checksState)) {
     return '';
   }
-
-  // Para simplicidad, asumimos que los índices corresponden a los códigos 0,1,2,etc.
-  // Esto es una simplificación, en un caso real deberíamos mapear los índices a códigos reales
   const codigosSeleccionados = checksState
     .map((checked, index) => checked ? index : null)
     .filter(codigo => codigo !== null);
@@ -819,22 +744,50 @@ window.guardarConfiguracion = async function () {
       }
     });
 
+    Object.keys(configSimple).forEach(key => {
+      const value = configSimple[key];
+      // Verifica si hay valores undefined
+      if (value === undefined) {
+        console.warn(`Propiedad ${key} es undefined - configurando como string vacío`);
+        configSimple[key] = '';
+      }
+
+      // Verifica si hay objetos circulares que no se pueden serializar
+      if (typeof value === 'object' && value !== null) {
+        try {
+          JSON.stringify(value);
+        } catch (e) {
+          console.error(`No se puede serializar propiedad ${key}:`, e);
+          configSimple[key] = '';
+        }
+      }
+    });
+
     // Guardar la configuración
     const resultado = await window.electron.saveConfig(configSimple);
 
     if (!resultado.success) {
-      throw new Error(resultado.error || 'Error al guardar la configuración');
+      const errorMsg = resultado.error || 'Error desconocido al guardar la configuración';
+      console.error('Error de guardado (detalle):', errorMsg);
+      throw new Error(errorMsg);
     }
 
     // Mostrar mensaje de éxito
     window.modalUtils.mostrarModalExito([
-      `¡Configuración guardada exitosamente!`,
-      `Archivo guardado en: ${resultado.path}`
-    ]);
+      `Configuración guardada exitosamente. ¿Desea salir del programa?`
+    ], () => {
+      // Cerrar la ventana principal
+      window.electron.invoke('close-app');
+    });
+    // Actualizar el estado en memoria
     return true;
   } catch (error) {
-    console.error('Error al guardar la configuración:', error);
-    window.modalUtils.mostrarModalError([`Error al guardar la configuración: ${error.message}`]);
+    console.error('Error completo al guardar:', error);
+    console.error('Stack trace:', error.stack); // Añadir stack trace
+    window.modalUtils.mostrarModalError([
+      `Error al guardar la configuración:`,
+      error.message || 'Error desconocido'
+    ]);
     return false;
   }
 }
@@ -850,18 +803,14 @@ document.addEventListener('DOMContentLoaded', function () {
         // Mostrar indicador de carga
         btnGuardarGlobal.disabled = true;
         btnGuardarGlobal.classList.add('guardando');
-        btnGuardarGlobal.innerHTML = '<span class="spinner"></span> Guardando...';
+        btnGuardarGlobal.innerHTML = '<span class="spinner"></span> Validando...';
 
-        // Llamar a la función global de guardado
-        if (typeof window.guardarConfiguracion === 'function') {
-          const resultado = await window.guardarConfiguracion();
-          if (!resultado && !window.modalUtils.lastModalWasShown) {
-            // Si no hubo modal de error y el resultado fue false
-            window.modalUtils.mostrarModalError(['No se pudo guardar la configuración']);
-          }
-        } else {
-          console.error('Función guardarConfiguracion no disponible');
-          window.modalUtils.mostrarModalError(['Error: La función de guardado no está disponible']);
+        // Usar la función compartida
+        const resultado = await validarYGuardarConfiguracion();
+
+        if (!resultado && !window.modalUtils.lastModalWasShown) {
+          // Si no hubo modal de error y el resultado fue false
+          window.modalUtils.mostrarModalError(['No se pudo guardar la configuración']);
         }
       } catch (error) {
         console.error('Error al guardar:', error);
@@ -875,9 +824,35 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 500);
       }
     });
-
-    console.log('Botón de guardar global inicializado');
   } else {
     console.warn('Botón de guardar global no encontrado en el DOM');
   }
 });
+
+// Función unificada para validación y guardado de la configuración
+async function validarYGuardarConfiguracion() {
+  try {
+    // Por defecto, validar la pestaña General si estamos en ella
+    const generalTab = document.getElementById('general-tab');
+    if (generalTab && window.getComputedStyle(generalTab).display !== 'none') {
+      if (typeof validarGeneral === 'function') {
+        const esValido = await validarGeneral();
+        if (!esValido) return false;
+      }
+    }
+
+    // Llamar directamente a guardarConfiguracion
+    if (typeof window.guardarConfiguracion === 'function') {
+      const resultado = await window.guardarConfiguracion();
+      return resultado;
+    } else {
+      console.error('Función guardarConfiguracion no disponible');
+      window.modalUtils.mostrarModalError(['Error: La función de guardado no está disponible']);
+      return false;
+    }
+  } catch (error) {
+    console.error('Error al guardar:', error);
+    window.modalUtils.mostrarModalError([`Error al guardar: ${error.message}`]);
+    return false;
+  }
+}

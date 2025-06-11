@@ -334,7 +334,9 @@ ipcMain.handle('save-config', async (event, config) => {
     console.error('Error al guardar configuración:', error);
     return {
       success: false,
-      error: error.message
+      error: error.message,
+      stack: error.stack,
+      code: error.code
     };
   }
 });

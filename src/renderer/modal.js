@@ -50,6 +50,9 @@ async function cargarModalHTML() {
 
 // Mostrar el modal con mensajes de error
 async function mostrarModalError(mensajes, callback) {
+    // Marca que se ha mostrado un modal de error
+    window.modalUtils.lastModalWasShown = true;
+
     // Asegurarse de que el HTML del modal esté cargado
     await cargarModalHTML();
 
@@ -81,38 +84,79 @@ async function mostrarModalError(mensajes, callback) {
     modal._closeCallback = callback || null;
 }
 
-// Mostrar el modal con mensajes de éxito
+// Función para mostrar mensaje de éxito con opción de salir
 async function mostrarModalExito(mensajes, callback) {
-    // Asegurarse de que el HTML del modal esté cargado
     await cargarModalHTML();
 
-    // Obtener el modal y la lista de mensajes
     const modal = document.getElementById('error-modal');
-    const errorList = document.getElementById('error-list');
-    const modalHeader = modal.querySelector('.modal-header');
-    const modalTitle = modalHeader.querySelector('h3');
+    if (!modal) return;
 
-    // Configurar como modal de éxito
-    modalHeader.style.backgroundColor = '#e8f5e9';
-    modalHeader.style.color = '#2e7d32';
-    modalTitle.textContent = '¡Operación completada con éxito!';
+    // Cambiar título y estilo para modal de éxito
+    const modalContent = modal.querySelector('.modal-content');
+    if (!modalContent) return;
 
-    // Limpiar lista de mensajes anterior
-    errorList.innerHTML = '';
+    // Crear o actualizar el encabezado
+    let modalHeader = modal.querySelector('.modal-header');
+    if (!modalHeader) {
+        modalHeader = document.createElement('div');
+        modalHeader.className = 'modal-header';
+        modalContent.appendChild(modalHeader);
+    }
+    modalHeader.innerHTML = '<h3>Confirmación</h3>';
 
-    // Agregar los mensajes de éxito a la lista
-    mensajes.forEach(mensaje => {
-        const item = document.createElement('li');
-        item.textContent = mensaje;
-        item.style.color = '#2e7d32';
-        errorList.appendChild(item);
-    });
+    // Crear o actualizar el cuerpo del modal
+    let modalBody = modal.querySelector('.modal-body');
+    if (!modalBody) {
+        modalBody = document.createElement('div');
+        modalBody.className = 'modal-body';
+        modalContent.appendChild(modalBody);
+    }
+
+    // Contenido del mensaje con estilo similar a la imagen
+    modalBody.innerHTML = `
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
+            <div>
+                <p>Configuración guardada exitosamente. ¿Desea salir del programa?</p>
+            </div>
+        </div>
+    `;
+
+    // Crear o actualizar el footer con botones
+    let modalFooter = modal.querySelector('.modal-footer');
+    if (!modalFooter) {
+        modalFooter = document.createElement('div');
+        modalFooter.className = 'modal-footer';
+        modalContent.appendChild(modalFooter);
+    }
+
+    // Botones en español, como en la imagen
+    modalFooter.innerHTML = `
+        <button id="modal-yes-btn" class="btn btn-primary">Sí</button>
+        <button id="modal-no-btn" class="btn">No</button>
+    `;
 
     // Mostrar el modal
     modal.style.display = 'block';
 
-    // Guardar el callback para ejecutarlo al cerrar
-    modal._closeCallback = callback || null;
+    // Configurar eventos de botones
+    const yesBtn = document.getElementById('modal-yes-btn');
+    const noBtn = document.getElementById('modal-no-btn');
+
+    yesBtn.onclick = function () {
+        cerrarModal();
+        if (typeof callback === 'function') {
+            callback(true); // true indica "Sí"
+        }
+        // Cerrar la aplicación
+        window.electron.closeApp();
+    };
+
+    noBtn.onclick = function () {
+        cerrarModal();
+        if (typeof callback === 'function') {
+            callback(false); // false indica "No"
+        }
+    };
 }
 
 // Cerrar el modal
@@ -120,6 +164,9 @@ function cerrarModal() {
     const modal = document.getElementById('error-modal');
     if (modal) {
         modal.style.display = 'none';
+
+        // Resetear la bandera cuando se cierra el modal
+        window.modalUtils.lastModalWasShown = false;
 
         // Ejecutar callback si existe
         if (typeof modal._closeCallback === 'function') {
@@ -134,5 +181,6 @@ window.modalUtils = {
     mostrarModalError,
     mostrarModalExito,
     cerrarModal,
-    cargarModalHTML
+    cargarModalHTML,
+    lastModalWasShown: false
 };

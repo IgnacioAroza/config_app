@@ -1,4 +1,5 @@
 const { app, BrowserWindow } = require('electron');
+const { ipcMain } = require('electron');
 const path = require('path');
 require('./ipcHandlers');
 
@@ -23,4 +24,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+ipcMain.handle('close-app', () => {
+  app.quit();
 });
