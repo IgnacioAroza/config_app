@@ -27,5 +27,6 @@ contextBridge.exposeInMainWorld('electron', {
   saveConfig: (config) => {
     return ipcRenderer.invoke('save-config', config);
   },
+  getAppPath: () => app.getPath('exe'),
   closeApp: () => ipcRenderer.invoke('close-app'),
 });

@@ -413,6 +413,6 @@ async function initEmpresas() {
         await cargarEmpresas();
     } catch (error) {
         console.error('Error al inicializar empresas:', error);
-        mostrarErrorModal([`Error al inicializar empresas: ${error.message}`]);
+        mostrarErrorModal(['Error al inicializar empresas. Debe haber una carpeta Data configurada.']);
     }
 }

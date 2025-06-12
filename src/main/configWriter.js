@@ -1,6 +1,7 @@
 const { writeFileSync, existsSync, mkdirSync } = require('fs');
 const path = require('path');
 const { app } = require('electron');
+const fs = require('fs');
 
 /**
  * Genera un documento XML a partir de un objeto de configuración
@@ -106,7 +107,7 @@ function createDefaultConfigFile(filePath) {
     exportapi: 'false',
     test: 'true',
     idsuscriptor: '',
-    remitentecorreo: 'fuerzadeventa.reporte@gmail.com',
+    remitentecorreo: '',
     destinatariocorreo: '',
     destinatariocorreocopia: '',
     destinatariocorreoculta: '',
@@ -136,7 +137,17 @@ function createDefaultConfigFile(filePath) {
     mkdirSync(dir, { recursive: true });
   }
 
-  writeFileSync(filePath, xmlContent, 'utf8');
+  try {
+    writeFileSync(filePath, xmlContent, 'utf8');
+    console.log('Archivo de configuración creado exitosamente en:', filePath);
+  } catch (error) {
+    console.error('Error al crear el archivo de configuración:', error);
+    // Si falla, intentar crear en el directorio de datos de usuario
+    const userDataPath = app.getPath('userData');
+    const alternativePath = path.join(userDataPath, 'settings.config');
+    console.log('Intentando crear en ubicación alternativa:', alternativePath);
+    writeFileSync(alternativePath, xmlContent, 'utf8');
+  }
 }
 
 /**
@@ -147,39 +158,84 @@ function createDefaultConfigFile(filePath) {
  */
 function saveConfig(filePath, config) {
   try {
-    // Verificar que tenemos todos los campos necesarios
-
+    // Generar el contenido XML
     const xmlContent = generateXmlContent(config);
 
-    // Para debug - comprobar si el XML contiene la etiqueta empresas
-    if (!xmlContent.includes('<empresas>') && config.empresas) {
-      console.error('Advertencia: La configuración XML no contiene la etiqueta <empresas> aunque existe en el objeto config');
+    // Detección explícita de si estamos en desarrollo o producción
+    const isDevMode = !app.isPackaged;
+
+    // Determinar la ruta correcta donde guardar
+    let configPath = filePath;
+
+    // Si no se proporciona una ruta específica, usar la ruta predeterminada
+    if (!configPath) {
+      const exePath = app.getPath('exe');
+      const appDir = path.dirname(exePath);
+
+      if (isDevMode) {
+        // En modo desarrollo, usar una ubicación fija conocida
+        configPath = path.join(app.getPath('userData'), 'settings.config');
+      } else {
+        // En modo producción, usar la carpeta del ejecutable
+        configPath = path.join(appDir, 'settings.config');
+      }
     }
 
-    writeFileSync(filePath, xmlContent, 'utf8');
+    // Asegurar que el directorio existe
+    const dir = path.dirname(configPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Guardar el archivo
+    fs.writeFileSync(configPath, xmlContent, 'utf8');
+
     return true;
   } catch (error) {
-    console.error('Error al guardar la configuracion:', error);
-    return false;
+    console.error('Error al guardar la configuración:', error);
+
+    // Intentar guardar en una ubicación alternativa
+    try {
+      const xmlContent = generateXmlContent(config);
+      const userDataPath = app.getPath('userData');
+      const alternativePath = path.join(userDataPath, 'settings.config');
+
+      fs.writeFileSync(alternativePath, xmlContent, 'utf8');
+      return true;
+    } catch (fallbackError) {
+      return false;
+    }
   }
+}
+
+function getConfigPath() {
+  let originalExePath = '';
+
+  if (process.platform === 'win32') {
+    // PORTABLE_EXECUTABLE_FILE contiene la ruta al archivo .exe original
+    if (process.env.PORTABLE_EXECUTABLE_FILE) {
+      originalExePath = process.env.PORTABLE_EXECUTABLE_FILE;
+    } else {
+      // Si la variable no está disponible, intentar con process.execPath
+      originalExePath = process.execPath;
+    }
+  } else {
+    // Para otros sistemas operativos
+    originalExePath = process.execPath;
+  }
+
+  // Obtener el directorio del ejecutable original
+  const originalDir = path.dirname(originalExePath);
+
+  // Usar esta ubicación para la configuración
+  const configPath = path.join(originalDir, 'settings.config');
+
+  return configPath;
 }
 
 // Exportar funciones
 module.exports = {
   saveConfig,
   createDefaultConfigFile,
-  // Devuelve la ruta al archivo settings.config
-  getConfigPath: () => {
-    // Comprobar si estamos en desarrollo o producción
-    const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
-
-    if (isDev) {
-      // En desarrollo, usar el directorio del proyecto
-      return path.join(process.cwd(), 'settings.config');
-    } else {
-      // En producción, usar el directorio de la aplicación
-      const appDir = path.dirname(app.getPath('exe'));
-      return path.join(appDir, 'settings.config');
-    }
-  }
+  getConfigPath
 };

@@ -6,48 +6,51 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make"
+    "build": "electron-builder",
+    "build-debug": "electron-builder --config.win.target=portable --config.win.artifactName=ColiseoDebug.exe",
+    "start-debug": "set DEBUG_COLISEO=true && electron ."
   },
-  "config": {
-    "forge": {
-      "packagerConfig": {
-        "name": "Coliseo",
-        "executableName": "Coliseo",
-        "icon": "./assets/icon.ico",
-        "extraResource": [
-          "./settings.config"
-        ]
-      },
-      "makers": [
+  "build": {
+    "appId": "com.tuempresa.coliseo",
+    "productName": "Coliseo",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
         {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "name": "Coliseo"
-          }
-        },
-        {
-          "name": "@electron-forge/maker-zip",
-          "platforms": [
-            "win32"
+          "target": "portable",
+          "arch": [
+            "x64"
           ]
         }
-      ]
-    }
+      ],
+      "icon": "./assets/FVConfig.ico",
+      "requestedExecutionLevel": "asInvoker",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "ConfigFV.exe"
+    },
+    "asar": false,
+    "forceCodeSigning": false
   },
   "keywords": [],
-  "author": "Tu Empresa",
+  "author": "Coliseo",
   "license": "ISC",
   "dependencies": {
     "dbf-reader": "^1.0.3",
-    "electron-squirrel-startup": "^1.0.1",
     "xmldom": "^0.6.0"
   },
   "devDependencies": {
-    "@electron-forge/cli": "^7.8.1",
     "@electron-forge/maker-squirrel": "^7.8.1",
     "@electron-forge/maker-zip": "^7.8.1",
-    "cross-env": "^7.0.3",
-    "electron": "^36.2.1"
+    "electron": "^36.2.1",
+    "electron-builder": "^26.0.12"
   }
 }

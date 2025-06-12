@@ -1,4 +1,4 @@
-const { ipcMain, dialog } = require('electron');
+const { ipcMain, dialog, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const {
@@ -232,9 +232,6 @@ ipcMain.handle('get-empresas-config', async () => {
       // Devolver array vacío si no hay empresas configuradas
       return [];
     }
-
-    // Aquí el error también: estás devolviendo configData.empresas después de verificar
-    // que empresasString (que ES configData.empresas) es una cadena
     return empresasString;
   } catch (error) {
     console.error('Error al obtener configuracion de empresas:', error);
@@ -325,18 +322,15 @@ ipcMain.handle('load-config', async () => {
 ipcMain.handle('save-config', async (event, config) => {
   try {
     const configPath = getConfigPath();
-    const result = saveConfig(configPath, config);
-    return {
-      success: result,
-      path: configPath
-    };
+
+    const saved = await saveConfig(configPath, config);
+
+    if (saved) {
+      return { success: true };
+    } else {
+      return { success: false, error: 'Error al guardar la configuración' };
+    }
   } catch (error) {
-    console.error('Error al guardar configuración:', error);
-    return {
-      success: false,
-      error: error.message,
-      stack: error.stack,
-      code: error.code
-    };
+    return { success: false, error: error.message };
   }
 });
