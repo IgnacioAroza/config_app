@@ -54,6 +54,9 @@ function generateXmlContent(config) {
     } else if (key === 'empresas' && Array.isArray(value)) {
       // Si empresas es un array, formatearlo correctamente
       return value.map(e => `${e.codigo},${e.ubicacion},${e.procesa ? 'True' : 'False'}`).join(';');
+    } else if (Array.isArray(value)) {
+      // Para otros arrays (checkboxes seleccionados), convertirlos a strings separados por comas
+      return value.join(',');
     } else if (typeof value === 'boolean') {
       return value.toString().toLowerCase();
     } else {
