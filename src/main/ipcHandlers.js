@@ -223,20 +223,22 @@ ipcMain.handle('get-empresas-config', async () => {
     const configData = readConfig(configPath);
 
     // Obtener el valor de empresas del XML
-    // Error aquí: xmlContent no existe, debes usar configData
-    let empresasString = configData?.empresas;
+    let empresasData = configData?.empresas;
 
-    // IMPORTANTE: Verificar que es una cadena antes de procesarla
-    if (typeof empresasString !== 'string') {
-      console.log('Nota: Devolviendo empresas como un array de objetos en lugar de como cadena');
-      // Devolver array vacío si no hay empresas configuradas
-      return [];
+    if (Array.isArray(empresasData)) {
+      return empresasData.map(empresa =>
+        `${empresa.codigo},${empresa.ubicacion},${empresa.procesa}`
+      ).join(';');
     }
-    return empresasString;
+
+    if (typeof empresasData === 'string') {
+      return empresasData;
+    }
+
+    return '';
   } catch (error) {
     console.error('Error al obtener configuracion de empresas:', error);
-    // Devolver array vacío para no romper el flujo
-    return [];
+    return '';
   }
 });
 

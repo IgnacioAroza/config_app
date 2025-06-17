@@ -1,6 +1,5 @@
 const { readFileSync, existsSync } = require('fs');
 const { DOMParser } = require('xmldom');
-const path = require('path');
 const { createDefaultConfigFile, getConfigPath } = require('./configWriter');
 
 /**

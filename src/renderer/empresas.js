@@ -71,22 +71,6 @@ function renderEmpresasTable() {
         tbody.appendChild(tr);
     });
 
-    // // Actualizar contador de empresas a procesar
-    // const empresasProcesadas = empresasModel.filter(e => e.procesa).length;
-    // const totalEmpresas = empresasModel.length;
-
-    // // Actualizar el contador en la sección de estadísticas
-    // const contadorElement = document.getElementById('empresas-contador');
-    // if (contadorElement) {
-    //     contadorElement.textContent = `${empresasProcesadas} de ${totalEmpresas} empresas serán procesadas`;
-    //     // Destacar visualmente si no hay ninguna empresa seleccionada
-    //     if (empresasProcesadas === 0 && totalEmpresas > 0) {
-    //         contadorElement.classList.add('error');
-    //     } else {
-    //         contadorElement.classList.remove('error');
-    //     }
-    // }
-
     // Listeners para botones de ubicación
     tbody.querySelectorAll('.btn-ubicacion').forEach((btn, idx) => {
         btn.addEventListener('click', async () => {
@@ -202,22 +186,34 @@ async function cargarEmpresas() {
 }
 
 // Función auxiliar para parsear la cadena de empresas
-function parseEmpresasString(empresasString) {
-    if (!empresasString) return [];
+function parseEmpresasString(empresasData) {
+    // Si ya es un array de objetos, devolverlo directamente
+    if (Array.isArray(empresasData) && empresasData.length > 0 && 
+        typeof empresasData[0] === 'object' && 'codigo' in empresasData[0]) {
+        return empresasData;
+    }
+    
+    // Si es una cadena, procesarla como antes
+    if (typeof empresasData === 'string') {
+        if (!empresasData) return [];
 
-    return empresasString.split(';')
-        .filter(emp => emp.trim())
-        .map(emp => {
-            const parts = emp.split(',');
-            if (parts.length < 3) return null;
+        return empresasData.split(';')
+            .filter(emp => emp.trim())
+            .map(emp => {
+                const parts = emp.split(',');
+                if (parts.length < 3) return null;
 
-            return {
-                codigo: parts[0].trim(),
-                ubicacion: parts[1].trim(),
-                procesa: parts[2].toLowerCase() === 'true'
-            };
-        })
-        .filter(emp => emp !== null);
+                return {
+                    codigo: parts[0].trim(),
+                    ubicacion: parts[1].trim(),
+                    procesa: parts[2].toLowerCase() === 'true'
+                };
+            })
+            .filter(emp => emp !== null);
+    }
+    
+    // Si no es array ni cadena, devolver array vacío
+    return [];
 }
 
 // Valida todas las empresas antes de guardar
