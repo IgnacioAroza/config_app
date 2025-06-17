@@ -343,12 +343,42 @@ window.getArticulosSeleccionados = function () {
 
     Object.keys(state).forEach(id => {
         const listName = id.replace('-list', ''); // Convertir 'depositos-list' a 'depositos'
-        const seleccion = state[id]
-            .map((checked, index) => checked ? codigosMap[id][index] : null)
-            .filter(codigo => codigo !== null)
-            .join(',');
 
-        seleccionados[listName] = seleccion;
+        // Verificar si todos los elementos están seleccionados (excepto el primero que es el 0)
+        const totalItems = state[id].length;
+        if (totalItems <= 1) {
+            seleccionados[listName] = '';
+            return; // Continuar con la siguiente lista
+        }
+
+        // Los elementos reales comienzan en el índice 1 (saltando el 0.vacío)
+        const itemsReales = state[id].slice(1);
+
+        // Verificar si todos están seleccionados
+        const todosSeleccionados = itemsReales.every(checked => checked === true);
+
+        if (todosSeleccionados) {
+            // Si todos están seleccionados, simplemente no incluimos este campo en seleccionados
+            // Esto hará que se genere un tag XML vacío como <marca></marca>
+            seleccionados[listName] = '';
+        } else {
+            // Si no todos están seleccionados, guardar solo los índices seleccionados
+            const indicesSeleccionados = [];
+
+            // Comenzamos desde el índice 1 para ignorar el "0.vacío"
+            for (let i = 1; i < state[id].length; i++) {
+                if (state[id][i]) {
+                    // Obtener el código correspondiente (número antes del punto)
+                    const codigo = codigosMap[id][i].split('.')[0];
+                    if (codigo) {
+                        indicesSeleccionados.push(codigo);
+                    }
+                }
+            }
+
+            // Unir con comas y guardar
+            seleccionados[listName] = indicesSeleccionados.join(',');
+        }
     });
 
     return seleccionados;

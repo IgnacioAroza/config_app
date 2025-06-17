@@ -344,12 +344,44 @@ window.getClientesSeleccionados = function () {
 
     Object.keys(state).forEach(id => {
         const fieldName = id.replace('-list', ''); // Convertir 'zonas-list' a 'zonas'
-        const seleccion = state[id]
-            .map((checked, index) => checked ? codigosMap[id][index] : null)
-            .filter(codigo => codigo !== null)
-            .join(',');
 
-        seleccionados[fieldName] = seleccion;
+        // Verificar si todos los elementos están seleccionados (excepto el primero que es el 0)
+        const totalItems = state[id].length;
+        if (totalItems <= 1) {
+            seleccionados[fieldName] = '';
+            return; // Continuar con la siguiente lista
+        }
+
+        // Los elementos reales comienzan en el índice 1 (saltando el 0.vacío)
+        const itemsReales = state[id].slice(1);
+
+        // Verificar si todos están seleccionados
+        const todosSeleccionados = itemsReales.every(checked => checked === true);
+
+        if (todosSeleccionados) {
+            // Si todos están seleccionados, asignar cadena vacía para que
+            // se genere un tag XML vacío como <tipingresos></tipingresos>
+            seleccionados[fieldName] = '';
+        } else {
+            // Si no todos están seleccionados, guardar solo los índices seleccionados
+            const indicesSeleccionados = [];
+
+            // Comenzamos desde el índice 1 para ignorar el "0.vacío"
+            for (let i = 1; i < state[id].length; i++) {
+                if (state[id][i]) {
+                    // Obtener el código correspondiente (número antes del punto)
+                    const codigo = codigosMap[id][i];
+                    if (codigo) {
+                        // Extraer solo el número del código (por si acaso viene con formato)
+                        const codigoNumerico = codigo.split('.')[0];
+                        indicesSeleccionados.push(codigoNumerico);
+                    }
+                }
+            }
+
+            // Unir con comas y guardar
+            seleccionados[fieldName] = indicesSeleccionados.join(',');
+        }
     });
 
     return seleccionados;
