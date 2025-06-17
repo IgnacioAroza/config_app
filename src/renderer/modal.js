@@ -147,8 +147,6 @@ async function mostrarModalExito(mensajes, callback) {
         if (typeof callback === 'function') {
             callback(true); // true indica "Sí"
         }
-        // Cerrar la aplicación
-        window.electron.closeApp();
     };
 
     noBtn.onclick = function () {

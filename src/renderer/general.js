@@ -775,9 +775,11 @@ window.guardarConfiguracion = async function () {
     // Mostrar mensaje de éxito
     window.modalUtils.mostrarModalExito([
       `Configuración guardada exitosamente. ¿Desea salir del programa?`
-    ], () => {
+    ], (shouldClose) => {
       // Cerrar la ventana principal
-      window.electron.invoke('close-app');
+      if (shouldClose) {
+        window.electron.invoke('close-app');
+      }
     });
     // Actualizar el estado en memoria
     return true;
