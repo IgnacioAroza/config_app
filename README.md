@@ -1,73 +1,86 @@
-# Coliseo - Configurador de Fuerza de Venta
+# Instrucciones para descargar y ejecutar el proyecto Coliseo
 
-Aplicación de escritorio para la configuración y gestión de parámetros de Fuerza de Venta, desarrollada con Electron y JavaScript.
+## Opción 1: Descargar usando Git
 
-<p align="center">
-  <img src="assets/logo.png" alt="Logo de Coliseo" width="200">
-</p>
+1. **Descargar el proyecto**
+   - Abre el programa "Símbolo del sistema" o "Terminal" en tu computadora
+   - Copia y pega este comando:
+   ```
+   git clone https://github.com/tuusuario/Coliseo.git
+   ```
+   - Luego escribe:
+   ```
+   cd Coliseo
+   ```
 
-## Descripción
+2. **Instalar lo necesario para que funcione**
+   - En la misma ventana, escribe:
+   ```
+   npm install
+   ```
+   - Espera a que termine (puede tardar unos minutos)
 
-Coliseo es una herramienta que permite configurar todos los parámetros necesarios para el sistema Fuerza de Venta, incluyendo:
+3. **Iniciar el programa**
+   - Finalmente, escribe:
+   ```
+   npm start
+   ```
+   - El programa debería abrirse automáticamente
 
-- Rutas de archivos y carpetas del sistema
-- Configuración de empresas
-- Filtrado y selección de artículos para exportación
-- Filtrado y selección de clientes para exportación
-- Parámetros generales del sistema
+## Opción 2: Descargar como archivo ZIP
 
-## Requisitos previos
+1. **Descargar el programa**
+   - Usa el archivo ZIP que recibiste por correo electrónico
+   - O descárgalo desde el enlace que te proporcionaron
 
-- Windows 10 o superior
-- Acceso a las carpetas del sistema ERP
-- Permisos de administrador para instalar la aplicación
+2. **Preparar el programa**
+   - Busca el archivo ZIP descargado en tu computadora
+   - Haz clic derecho sobre él y selecciona "Extraer todo..." o "Descomprimir aquí"
+   - Se creará una carpeta con todos los archivos del programa
 
-## Instalación
+3. **Instalar lo necesario**
+   - Abre la carpeta que acabas de crear
+   - Mantén presionada la tecla Shift y haz clic derecho en un espacio vacío dentro de la carpeta
+   - Selecciona "Abrir ventana de PowerShell aquí" o "Abrir ventana de comandos aquí"
+   - En la ventana que aparece, escribe:
+   ```
+   npm install
+   ```
+   - Espera a que termine (puede tardar unos minutos)
 
-### Opción 1: Instalador
+4. **Iniciar el programa en modo desarrollo**
+   - En la misma ventana, escribe:
+   ```
+   npm run start
+   ```
+   - El programa debería abrirse automáticamente
 
-1. Ejecuta `Coliseo-1.0.0 Setup.exe`
-2. Sigue las instrucciones del instalador
-3. La aplicación se instalará y creará accesos directos
+5. **Compilar programa**
+   - En la misma ventana, escribe:
+   ```
+   npm run build
+   ```
+   - Esperar a que genere los archivos
+   - El comando generara una carpeta llamada 'dist'
+   - Abrir la carpeta 'dist' dentro va a estar el archivo ejecutable
 
-### Opción 2: Versión portable
+## Estructura del proyecto
+   El proyecto es una aplicación Electron que configura parámetros para Fuerza de Venta:
 
-1. Descomprime el archivo ZIP en la ubicación deseada
-2. Ejecuta `Coliseo.exe` para iniciar la aplicación
+   - Carpeta main: Contiene los archivos del proceso principal de Electron
+   - Carpeta renderer: Contiene la lógica del frontend
+   - Carpeta public: Contiene los archivos HTML y CSS de la interfaz
 
+## Lo que necesitas tener instalado antes de empezar
 
-## Uso
+- **Node.js**: Si no lo tienes, descárgalo e instálalo desde [nodejs.org](https://nodejs.org)
+  - Durante la instalación, simplemente haz clic en "Siguiente" en todas las opciones
 
-1. **Pestaña General**: Configura las rutas de las carpetas del sistema
-   - ERP Folder: Carpeta raíz del ERP
-   - Data Folder: Carpeta de datos
-   - Export Folder: Carpeta donde se guardarán los archivos exportados
-   - Temp Folder: Carpeta temporal para procesos intermedios
+## ¿Problemas?
 
-2. **Pestaña Empresas**: Selecciona las empresas disponibles para exportación
-   - Activar/desactivar empresas
-   - Establecer rutas específicas para cada empresa
+Si el programa no se inicia correctamente:
+- Asegúrate de haber seguido todos los pasos en orden
+- Verifica que hayas instalado Node.js correctamente
+- Intenta reiniciar tu computadora y volver a intentarlo
 
-3. **Pestaña Artículos**: Configura los filtros para la exportación de artículos
-   - Selección por depósito, categoría, línea, etc.
-   - Activar/desactivar exportación para cada artículo
-
-4. **Pestaña Clientes**: Configura los filtros para la exportación de clientes
-   - Selección por zona, grupo, tipo, etc.
-   - Activar/desactivar exportación para cada cliente
-
-5. **Guardar Configuración**: Presiona el botón "Guardar" para almacenar todos los cambios
-
-## Formato del archivo de configuración
-
-El archivo `settings.config` utiliza formato XML para almacenar la configuración:
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-  <erpfolder>C:\Coliseo\ERP</erpfolder>
-  <datafolder>C:\Coliseo\ERP\Data</datafolder>
-  <exportfolder>C:\Coliseo\Fuerzadeventa\Exportacion</exportfolder>
-  <tempfolder>C:\Coliseo\Fuerzadeventa\Temp</tempfolder>
-  <!-- Continúa con el resto de configuraciones -->
-</configuration>
+Para cualquier consulta adicional, por favor contáctanos por correo electrónico.
